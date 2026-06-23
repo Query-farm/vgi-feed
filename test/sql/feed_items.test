@@ -1,0 +1,99 @@
+# name: test/sql/feed_items.test
+# description: feed_items against the mock RSS/Atom/JSON feeds + raw text + errors
+# group: [vgi_feed]
+
+require-env VGI_FEED_WORKER
+
+require-env VGI_FEED_TEST_URL
+
+# haybarn-unittest does NOT autoload the extension for `require vgi` (it is
+# silently SKIPPED). Load it explicitly instead.
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'feed' AS feed (TYPE vgi, LOCATION '${VGI_FEED_WORKER}');
+
+# ---- feed_items over the mock RSS feed: count + ordered titles/links ----
+
+query I
+SELECT count(*) FROM feed.feed_items('${VGI_FEED_TEST_URL}/rss');
+----
+2
+
+query TT
+SELECT title, link
+FROM feed.feed_items('${VGI_FEED_TEST_URL}/rss')
+ORDER BY seq;
+----
+First RSS Post	https://example.com/rss/1
+Second RSS Post	https://example.com/rss/2
+
+# published date parsed (year extracted).
+query I
+SELECT EXTRACT(year FROM published)
+FROM feed.feed_items('${VGI_FEED_TEST_URL}/rss')
+WHERE seq = 0;
+----
+2006
+
+# categories is a VARCHAR[] — UNNEST the first item's categories.
+query T
+SELECT UNNEST(categories)
+FROM feed.feed_items('${VGI_FEED_TEST_URL}/rss')
+WHERE seq = 0;
+----
+news
+tech
+
+# ---- Atom feed: author + content parse ----
+
+query TT
+SELECT author, content
+FROM feed.feed_items('${VGI_FEED_TEST_URL}/atom')
+WHERE seq = 0;
+----
+Bob	Body of the first Atom entry.
+
+# ---- JSON Feed: titles + categories(tags) ----
+
+query I
+SELECT count(*) FROM feed.feed_items('${VGI_FEED_TEST_URL}/json');
+----
+2
+
+query T
+SELECT title
+FROM feed.feed_items('${VGI_FEED_TEST_URL}/json')
+ORDER BY seq;
+----
+First JSON Item
+Second JSON Item
+
+# ---- max_items named option caps the result ----
+
+query I
+SELECT count(*)
+FROM feed.feed_items('${VGI_FEED_TEST_URL}/rss', max_items := 1);
+----
+1
+
+# ---- raw-feed-text input (not a URL) is parsed directly ----
+
+query T
+SELECT title
+FROM feed.feed_items('<?xml version="1.0"?><rss version="2.0"><channel><title>t</title><item><title>Inline Item</title><link>https://x/1</link></item></channel></rss>');
+----
+Inline Item
+
+# ---- a malformed feed surfaces a clean error ----
+
+statement error
+SELECT * FROM feed.feed_items('${VGI_FEED_TEST_URL}/malformed');
+----
+
+# ---- raw malformed text also errors ----
+
+statement error
+SELECT * FROM feed.feed_items('<rss><channel><title>broken</title><item><title>oops');
+----

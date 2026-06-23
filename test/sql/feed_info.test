@@ -1,0 +1,62 @@
+# name: test/sql/feed_info.test
+# description: feed_info metadata + feed_type detection across RSS/Atom/JSON
+# group: [vgi_feed]
+
+require-env VGI_FEED_WORKER
+
+require-env VGI_FEED_TEST_URL
+
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'feed' AS feed (TYPE vgi, LOCATION '${VGI_FEED_WORKER}');
+
+# ---- feed_info returns exactly one row of metadata ----
+
+query I
+SELECT count(*) FROM feed.feed_info('${VGI_FEED_TEST_URL}/rss');
+----
+1
+
+# ---- feed_type detection: rss / atom / json ----
+
+query TI
+SELECT feed_type, item_count
+FROM feed.feed_info('${VGI_FEED_TEST_URL}/rss');
+----
+rss	2
+
+query TI
+SELECT feed_type, item_count
+FROM feed.feed_info('${VGI_FEED_TEST_URL}/atom');
+----
+atom	2
+
+query TI
+SELECT feed_type, item_count
+FROM feed.feed_info('${VGI_FEED_TEST_URL}/json');
+----
+json	2
+
+# ---- title + language ----
+
+query TT
+SELECT title, language
+FROM feed.feed_info('${VGI_FEED_TEST_URL}/rss');
+----
+VGI Mock RSS	en-us
+
+# ---- raw-feed-text input parsed directly (feed_type still detected) ----
+
+query T
+SELECT feed_type
+FROM feed.feed_info('{"version":"https://jsonfeed.org/version/1.1","title":"Inline JSON","items":[{"id":"1","title":"x"}]}');
+----
+json
+
+# ---- malformed feed → clean error ----
+
+statement error
+SELECT * FROM feed.feed_info('${VGI_FEED_TEST_URL}/malformed');
+----
