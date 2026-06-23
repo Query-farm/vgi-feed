@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="docs/vgi-logo.png" alt="Vector Gateway Interface (VGI)" width="320">
+</p>
+
+<p align="center"><em>A <a href="https://query.farm">Query.Farm</a> VGI worker for DuckDB.</em></p>
+
 # vgi-feed
 
 [![CI](https://github.com/Query-farm/vgi-feed/actions/workflows/ci.yml/badge.svg)](https://github.com/Query-farm/vgi-feed/actions/workflows/ci.yml)
@@ -105,3 +111,12 @@ Dependencies:
 - The VGI SDK stack — [`vgi-go`](https://github.com/Query-farm/vgi-go) (the
   worker SDK, MIT here), [`vgi-rpc-go`](https://github.com/Query-farm/vgi-rpc-go),
   and [`arrow-go`](https://github.com/apache/arrow-go) (Apache-2.0).
+
+---
+
+## Authorship & License
+
+Written by [Query.Farm](https://query.farm) — every VGI worker is designed and built by Query.Farm.
+
+Copyright 2026 Query Farm LLC - https://query.farm
+
