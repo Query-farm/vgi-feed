@@ -4,7 +4,9 @@
 
 <p align="center"><em>A <a href="https://query.farm">Query.Farm</a> VGI worker for DuckDB.</em></p>
 
-# vgi-feed
+# Parse RSS, Atom & JSON Feeds into Rows in DuckDB
+
+> **vgi-feed** · a [Query.Farm](https://query.farm) VGI worker · powered by gofeed
 
 [![CI](https://github.com/Query-farm/vgi-feed/actions/workflows/ci.yml/badge.svg)](https://github.com/Query-farm/vgi-feed/actions/workflows/ci.yml)
 
