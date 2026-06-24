@@ -43,7 +43,10 @@ func main() {
 			SourceURL: &sourceURL,
 		}),
 		vgi.WithCatalogTags(map[string]string{
-			"source": "vgi-feed",
+			"source":    "vgi-feed",
+			"vgi.title": "RSS / Atom / JSON Feed Parser",
+			"vgi.keywords": "feed, rss, atom, json feed, syndication, feed parser, news, blog, " +
+				"podcast, feed reader, rss reader, parse feed, feed items, feed metadata",
 			"vgi.description_llm": "Fetch and parse RSS, Atom, and JSON feeds into SQL rows. " +
 				"The feed input may be an http(s) URL (fetched over HTTP) or a raw feed document " +
 				"supplied inline; the format (RSS 2.0, Atom, or JSON Feed) is auto-detected. " +
@@ -69,11 +72,24 @@ func main() {
 		}),
 		vgi.WithSchemaTags(map[string]map[string]string{
 			"main": {
+				"vgi.title": "Feed Parsing Functions",
+				"vgi.keywords": "feed, rss, atom, json feed, syndication, feed_items, feed_info, " +
+					"parse feed, feed items, feed metadata, news, blog, podcast",
+				// VGI123 classifying tags (BARE keys: domain/category/topic) for faceting.
+				"domain":         "data-integration",
+				"category":       "parsing",
+				"topic":          "feed-syndication",
+				"vgi.source_url": "https://github.com/Query-farm/vgi-feed/blob/main/internal/feedworker/functions.go",
 				"vgi.description_llm": "Feed parsing table functions: feed_items returns one row " +
 					"per feed entry, and feed_info returns one row of feed-level metadata. Both " +
 					"accept an http(s) URL or a raw RSS/Atom/JSON feed document and auto-detect " +
 					"the feed format.",
 				"vgi.description_md": "Table functions for parsing RSS / Atom / JSON feeds into rows.",
+				// VGI506 representative example queries for the schema. Each parses an
+				// inline RSS document so it runs without network access.
+				"vgi.example_queries": "SELECT seq, title, link FROM feed.main.feed_items('" + feedworker.SampleRSS + "') ORDER BY seq;\n" +
+					"SELECT count(*) FROM feed.main.feed_items('" + feedworker.SampleRSS + "');\n" +
+					"SELECT title, feed_type, language, item_count FROM feed.main.feed_info('" + feedworker.SampleRSS + "');",
 			},
 		}),
 	)

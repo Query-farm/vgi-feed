@@ -4,6 +4,7 @@ package feedworker
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/Query-farm/vgi-go/vgi"
@@ -15,6 +16,62 @@ import (
 
 // CatalogName is the VGI catalog name advertised by this worker.
 const CatalogName = "feed"
+
+// SampleRSS is a tiny, self-contained RSS 2.0 document used by the catalog
+// examples and executable examples. It is parsed directly with NO network
+// access, so the examples execute deterministically against an attached worker
+// even when no feed server is reachable. It deliberately contains NO single
+// quotes so it can be embedded verbatim inside a single-quoted SQL literal.
+const SampleRSS = "<rss version=\"2.0\"><channel>" +
+	"<title>Query Farm Sample Feed</title>" +
+	"<link>https://query.farm/</link>" +
+	"<description>A small RSS feed used by vgi-feed examples</description>" +
+	"<language>en-us</language>" +
+	"<item><title>First Post</title><link>https://query.farm/first</link>" +
+	"<category>news</category><category>release</category>" +
+	"<description>The first sample entry</description></item>" +
+	"<item><title>Second Post</title><link>https://query.farm/second</link>" +
+	"<category>news</category>" +
+	"<description>The second sample entry</description></item>" +
+	"</channel></rss>"
+
+// executableExamples is the VGI509 guaranteed-runnable, catalog-qualified
+// example set. Every sql is self-contained, re-runnable against an attached
+// feed worker, and parses inline RSS text so it needs no network. We omit
+// expected_result deliberately — the linter only needs each query to execute
+// cleanly. It is JSON-marshalled from structs so the embedded RSS literal
+// (which contains double quotes from version="2.0") is correctly escaped.
+var executableExamples = buildExecutableExamples()
+
+func buildExecutableExamples() string {
+	type example struct {
+		Description string `json:"description"`
+		SQL         string `json:"sql"`
+	}
+	examples := []example{
+		{
+			Description: "List the items parsed from an inline RSS 2.0 feed, ordered by position.",
+			SQL:         "SELECT seq, title, link FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq",
+		},
+		{
+			Description: "Count the items in an inline feed.",
+			SQL:         "SELECT count(*) AS items FROM feed.main.feed_items('" + SampleRSS + "')",
+		},
+		{
+			Description: "Expand each item's categories into one row per (item, category).",
+			SQL:         "SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq",
+		},
+		{
+			Description: "Read feed-level metadata: title, detected format, language, and item count.",
+			SQL:         "SELECT title, feed_type, language, item_count FROM feed.main.feed_info('" + SampleRSS + "')",
+		},
+	}
+	b, err := json.Marshal(examples)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
 
 // IMPORTANT: table-function state is gob-encoded by the SDK between NewState and
 // Process (it may cross a process/worker boundary), so state structs must have
@@ -167,31 +224,46 @@ var _ vgi.TypedTableFunc[itemsState] = (*ItemsFunction)(nil)
 func (f *ItemsFunction) Name() string { return "feed_items" }
 
 func (f *ItemsFunction) Metadata() vgi.FunctionMetadata {
+	tags := objectTags(
+		"Feed Items To Rows",
+		"Parse an RSS 2.0, Atom, or JSON Feed into one row per entry. The input is "+
+			"either an http(s) URL (fetched over HTTP) or a raw feed document supplied "+
+			"inline; the format is auto-detected. Each row carries the item's sequence, "+
+			"GUID, title, link, publish and update timestamps, author, categories array, "+
+			"summary, and full content. Use it to ingest news/blog/podcast feeds and turn "+
+			"syndicated entries into a queryable table.",
+		"Parse an RSS/Atom/JSON feed (URL or raw text) into **one row per item** — "+
+			"`seq`, `guid`, `title`, `link`, `published`, `updated`, `author`, "+
+			"`categories`, `summary`, `content`.",
+		"feed, rss, atom, json feed, syndication, items, entries, parse feed, "+
+			"feed items, news, blog, podcast, rss reader, feed reader",
+		"internal/feedworker/functions.go",
+	)
+	tags["vgi.columns_md"] = "| Column | Type | Description |\n" +
+		"| --- | --- | --- |\n" +
+		"| `seq` | BIGINT | 0-based position of the item within the feed |\n" +
+		"| `guid` | VARCHAR | Item GUID / id (empty when the feed omits one) |\n" +
+		"| `title` | VARCHAR | Item title |\n" +
+		"| `link` | VARCHAR | Item link / permalink URL |\n" +
+		"| `published` | TIMESTAMP | Publish time (NULL when absent or unparseable) |\n" +
+		"| `updated` | TIMESTAMP | Last-updated time (NULL when absent or unparseable) |\n" +
+		"| `author` | VARCHAR | Author display name or email (empty when absent) |\n" +
+		"| `categories` | VARCHAR[] | Item categories / tags (empty list when none) |\n" +
+		"| `summary` | VARCHAR | Item summary / description |\n" +
+		"| `content` | VARCHAR | Full item content (empty when not provided) |"
+	tags["vgi.executable_examples"] = executableExamples
 	return vgi.FunctionMetadata{
 		Description: "Parse an RSS/Atom/JSON feed (URL or raw text) into one row per item",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"feed", "rss", "atom"},
-		Tags: map[string]string{
-			"vgi.columns_md": "| Column | Type | Description |\n" +
-				"| --- | --- | --- |\n" +
-				"| `seq` | BIGINT | 0-based position of the item within the feed |\n" +
-				"| `guid` | VARCHAR | Item GUID / id (empty when the feed omits one) |\n" +
-				"| `title` | VARCHAR | Item title |\n" +
-				"| `link` | VARCHAR | Item link / permalink URL |\n" +
-				"| `published` | TIMESTAMP | Publish time (NULL when absent or unparseable) |\n" +
-				"| `updated` | TIMESTAMP | Last-updated time (NULL when absent or unparseable) |\n" +
-				"| `author` | VARCHAR | Author display name or email (empty when absent) |\n" +
-				"| `categories` | VARCHAR[] | Item categories / tags (empty list when none) |\n" +
-				"| `summary` | VARCHAR | Item summary / description |\n" +
-				"| `content` | VARCHAR | Full item content (empty when not provided) |",
-		},
+		Tags:        tags,
 		Examples: []vgi.CatalogExample{
 			{
-				SQL:         "SELECT seq, title, link, published FROM feed.main.feed_items('https://hnrss.org/frontpage') ORDER BY seq;",
-				Description: "List items from a remote RSS feed with their publish timestamps.",
+				SQL:         "SELECT seq, title, link FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq;",
+				Description: "List items parsed directly from an inline RSS 2.0 document (no network access).",
 			},
 			{
-				SQL:         "SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('https://example.com/blog/atom.xml', max_items := 20);",
+				SQL:         "SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('" + SampleRSS + "', max_items := 20);",
 				Description: "Expand each item's categories into one row per (item, category), capped at 20 items.",
 			},
 		},
@@ -279,25 +351,38 @@ var _ vgi.TypedTableFunc[infoState] = (*InfoFunction)(nil)
 func (f *InfoFunction) Name() string { return "feed_info" }
 
 func (f *InfoFunction) Metadata() vgi.FunctionMetadata {
+	tags := objectTags(
+		"Feed Metadata Summary",
+		"Return one row of feed-level metadata for an RSS 2.0, Atom, or JSON Feed: "+
+			"the feed title, description/subtitle, home link, detected format "+
+			"(rss/atom/json), language, last-updated timestamp, and item count. The "+
+			"input is either an http(s) URL (fetched over HTTP) or a raw feed document "+
+			"supplied inline; the format is auto-detected. Use it to inspect or classify "+
+			"a feed without expanding every entry.",
+		"Return **feed-level metadata** (title, type, language, item count) for an "+
+			"RSS/Atom/JSON feed as a single row.",
+		"feed, rss, atom, json feed, syndication, feed info, feed metadata, "+
+			"feed type, feed title, language, item count, detect feed format",
+		"internal/feedworker/functions.go",
+	)
+	tags["vgi.columns_md"] = "| Column | Type | Description |\n" +
+		"| --- | --- | --- |\n" +
+		"| `title` | VARCHAR | Feed title |\n" +
+		"| `description` | VARCHAR | Feed description / subtitle |\n" +
+		"| `link` | VARCHAR | Feed home / site URL |\n" +
+		"| `feed_type` | VARCHAR | Detected format: `rss`, `atom`, or `json` |\n" +
+		"| `language` | VARCHAR | Feed language code (empty when absent) |\n" +
+		"| `updated` | TIMESTAMP | Feed last-updated time (NULL when absent or unparseable) |\n" +
+		"| `item_count` | INTEGER | Number of items present in the feed |"
 	return vgi.FunctionMetadata{
 		Description: "Return feed-level metadata (title, type, language, item count) for an RSS/Atom/JSON feed",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"feed", "rss", "atom"},
-		Tags: map[string]string{
-			"vgi.columns_md": "| Column | Type | Description |\n" +
-				"| --- | --- | --- |\n" +
-				"| `title` | VARCHAR | Feed title |\n" +
-				"| `description` | VARCHAR | Feed description / subtitle |\n" +
-				"| `link` | VARCHAR | Feed home / site URL |\n" +
-				"| `feed_type` | VARCHAR | Detected format: `rss`, `atom`, or `json` |\n" +
-				"| `language` | VARCHAR | Feed language code (empty when absent) |\n" +
-				"| `updated` | TIMESTAMP | Feed last-updated time (NULL when absent or unparseable) |\n" +
-				"| `item_count` | INTEGER | Number of items present in the feed |",
-		},
+		Tags:        tags,
 		Examples: []vgi.CatalogExample{
 			{
-				SQL:         "SELECT title, feed_type, language, item_count FROM feed.main.feed_info('https://hnrss.org/frontpage');",
-				Description: "Inspect a remote feed's title, detected format, language, and item count.",
+				SQL:         "SELECT title, feed_type, language, item_count FROM feed.main.feed_info('" + SampleRSS + "');",
+				Description: "Inspect an inline feed's title, detected format, language, and item count (no network access).",
 			},
 			{
 				SQL:         "SELECT feed_type, item_count FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Example</title><item><title>Hi</title></item></channel></rss>');",
