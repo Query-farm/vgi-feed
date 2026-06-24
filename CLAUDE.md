@@ -84,11 +84,25 @@ NULL) and `buildStringListArray` (nil slice → empty list). Then
    exported, gob-encodable fields only** — no `arrow.Record`, no interfaces, no
    channels/funcs, no unexported fields. The SDK **panics at registration**
    otherwise (`TestRegisterDoesNotPanic` guards this). The pattern every function
-   uses: parse the feed eagerly in `NewState`, store the rows as plain exported
-   Go slices/structs (`Items []Item`, `Info Info` + `HasInfo bool`) plus a
-   `Done bool`, and **rebuild the Arrow batch in `Process`**. The `Item`/`Info`
-   structs in `feed.go` are deliberately all-exported; `*time.Time` is
-   gob-encodable and nil round-trips, which is how missing dates survive as NULL.
+   uses: parse the feed eagerly in `NewState`, store the rows in an embedded
+   `Cursor[T]{ Rows []T; Offset int }`, and **rebuild the Arrow batch in
+   `Process`**. The `Item`/`Info` structs in `feed.go` are deliberately
+   all-exported; `*time.Time` is gob-encodable and nil round-trips, which is how
+   missing dates survive as NULL.
+
+   **Streaming state MUST carry an explicit cursor, not a bare `Done bool`**
+   (the HTTP-continuation invariant). Over the **stateless HTTP transport** the
+   worker keeps no live state between `Process` ticks — the framework
+   round-trips the producer state through a continuation token (gob-snapshotting
+   the user state each tick, emitting ≤1 data batch per response, resuming from
+   the token). A `Done` flag flipped *after* the single `Emit` observes the
+   pre-`Emit` snapshot on resume, re-emits the same rows forever, and pins the
+   worker in an infinite loop (subprocess/unix hold live state in memory, so they
+   never hit it). `feed_items` emits MANY rows, so this is mandatory. The fix:
+   the embedded `Cursor[T]` whose `Process` emits a bounded slice from `Offset`,
+   advances `Offset` **before** yielding, and `out.Finish()`es when `Offset >=
+   len(Rows)`. The framework snapshots `Offset` into the token, so HTTP resumes
+   correctly and terminates. `TestCursorSurvivesContinuation` guards this.
 
 2. **URL vs. raw-text input.** `input` is classified by its first non-space byte
    (after stripping a UTF-8 BOM): `<`/`{`/`[` → a raw feed document parsed
