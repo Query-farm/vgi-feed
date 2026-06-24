@@ -20,16 +20,58 @@ const CatalogName = "feed"
 // Process (it may cross a process/worker boundary), so state structs must have
 // EXPORTED, gob-encodable fields only — no arrow.RecordBatch, no interfaces, no
 // channels/funcs, no unexported fields. Each function parses its feed eagerly in
-// NewState, stores plain Go slices/structs, sets Done in Process, and rebuilds
-// the Arrow batch there.
+// NewState, stores plain Go slices/structs in an embedded Cursor, and rebuilds
+// the Arrow batch in Process.
 //
 // time.Time is gob-encodable; *time.Time is too (nil round-trips), which is how
 // missing dates survive as NULL timestamps.
+//
+// WHY AN EXPLICIT CURSOR, NOT A bool Done (the HTTP-continuation fix):
+//
+// Over the stateless HTTP transport the worker keeps NO live state between
+// Process ticks — the framework round-trips the producer state through an opaque
+// continuation token: after each tick it gob-encodes the LIVE user state, the
+// client returns the token, and the worker resumes by gob-decoding it. The HTTP
+// server emits at most one data batch per response, so a producer with more to
+// emit is always resumed mid-stream from its token. A bare `Done bool` flipped
+// *after* the single Emit observes the pre-Emit snapshot on resume, re-emits the
+// same rows forever, and pins the worker in an infinite loop (subprocess/unix
+// hold live state in memory, so they never hit it). feed_items emits MANY rows,
+// so this is mandatory, not cosmetic. The fix: each state embeds Cursor[T]
+// carrying the fetched Rows plus the Offset of the next unemitted row; Process
+// emits a bounded slice from Offset, advances Offset BEFORE yielding, and
+// Finish()es once Offset >= len(Rows). The framework snapshots Offset into the
+// token, so HTTP resumes correctly and terminates.
 
-// emitState carries the shared "have we emitted yet" flag. Exported so gob can
-// round-trip it.
-type emitState struct {
-	Done bool
+// rowsPerTick bounds how many rows each Process tick emits. Emitting a bounded
+// slice and advancing the cursor is what makes the offset observable across the
+// HTTP continuation boundary (and scales to large feeds).
+const rowsPerTick = 256
+
+// Cursor is the shared streaming cursor embedded by every table-function state:
+// the eagerly fetched rows plus the offset of the next unemitted row. Both
+// fields are exported so gob round-trips them through the HTTP continuation
+// token. The TYPE is exported (Cursor, not cursor) because the SDK counts a
+// state struct's exported FIELDS at registration to verify it is gob-encodable.
+type Cursor[T any] struct {
+	Rows   []T
+	Offset int
+}
+
+// nextSlice returns the next bounded slice of rows to emit and advances the
+// cursor past them. It reports done=true once all rows have been consumed, at
+// which point Process should call out.Finish().
+func (c *Cursor[T]) nextSlice() (slice []T, done bool) {
+	if c.Offset >= len(c.Rows) {
+		return nil, true
+	}
+	end := c.Offset + rowsPerTick
+	if end > len(c.Rows) {
+		end = len(c.Rows)
+	}
+	slice = c.Rows[c.Offset:end]
+	c.Offset = end
+	return slice, false
 }
 
 // tsType is plain TIMESTAMP (microsecond, no timezone) so DuckDB sees TIMESTAMP
@@ -114,8 +156,7 @@ type itemsArgs struct {
 }
 
 type itemsState struct {
-	emitState
-	Items []Item
+	Cursor[Item]
 }
 
 // ItemsFunction returns one row per feed item.
@@ -151,15 +192,14 @@ func (f *ItemsFunction) NewState(params *vgi.ProcessParams) (*itemsState, error)
 	if err != nil {
 		return nil, err
 	}
-	return &itemsState{Items: ItemsFrom(feed, clampMaxItems(args.MaxItems))}, nil
+	return &itemsState{Cursor[Item]{Rows: ItemsFrom(feed, clampMaxItems(args.MaxItems))}}, nil
 }
 
 func (f *ItemsFunction) Process(_ context.Context, _ *vgi.ProcessParams, state *itemsState, out *vgirpc.OutputCollector) error {
-	if state.Done {
+	it, done := state.nextSlice()
+	if done {
 		return out.Finish()
 	}
-	state.Done = true
-	it := state.Items
 	n := int64(len(it))
 	batch := array.NewRecordBatch(itemsSchema, []arrow.Array{
 		vgi.BuildInt64Array(n, func(i int64) int64 { return it[i].Seq }),
@@ -204,9 +244,7 @@ type infoArgs struct {
 }
 
 type infoState struct {
-	emitState
-	HasInfo bool
-	Info    Info
+	Cursor[Info]
 }
 
 // InfoFunction returns one row of feed-level metadata.
@@ -242,18 +280,13 @@ func (f *InfoFunction) NewState(params *vgi.ProcessParams) (*infoState, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &infoState{HasInfo: true, Info: InfoFrom(feed)}, nil
+	return &infoState{Cursor[Info]{Rows: []Info{InfoFrom(feed)}}}, nil
 }
 
 func (f *InfoFunction) Process(_ context.Context, _ *vgi.ProcessParams, state *infoState, out *vgirpc.OutputCollector) error {
-	if state.Done {
+	rows, done := state.nextSlice()
+	if done {
 		return out.Finish()
-	}
-	state.Done = true
-	// A NULL input yields zero rows.
-	var rows []Info
-	if state.HasInfo {
-		rows = []Info{state.Info}
 	}
 	n := int64(len(rows))
 	batch := array.NewRecordBatch(infoSchema, []arrow.Array{
