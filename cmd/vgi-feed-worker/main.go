@@ -34,11 +34,47 @@ func main() {
 		log.Fatalf("logging flags: %v", err)
 	}
 
+	sourceURL := "https://github.com/Query-farm/vgi-feed"
 	w := vgi.NewWorker(
 		vgi.WithCatalogName(feedworker.CatalogName),
-		vgi.WithCatalogComment("Fetch and parse RSS / Atom / JSON feeds into rows"),
+		vgi.WithCatalogComment("Fetch and parse RSS / Atom / JSON feeds into rows."),
+		vgi.WithCatalogInfo(vgi.CatalogInfo{
+			Name:      feedworker.CatalogName,
+			SourceURL: &sourceURL,
+		}),
 		vgi.WithCatalogTags(map[string]string{
 			"source": "vgi-feed",
+			"vgi.description_llm": "Fetch and parse RSS, Atom, and JSON feeds into SQL rows. " +
+				"The feed input may be an http(s) URL (fetched over HTTP) or a raw feed document " +
+				"supplied inline; the format (RSS 2.0, Atom, or JSON Feed) is auto-detected. " +
+				"Use feed_items to get one row per entry (title, link, publish/update timestamps, " +
+				"author, categories, summary, content) and feed_info for feed-level metadata " +
+				"(title, type, language, item count). Use for syndication monitoring, ingesting " +
+				"news/blog/podcast feeds, and turning feeds into queryable tables.",
+			"vgi.description_md": "# feed\n\n" +
+				"Fetch and parse **RSS / Atom / JSON** feeds into DuckDB rows over Apache Arrow.\n\n" +
+				"The input is either an `http(s)` URL (fetched over HTTP) or a raw feed document " +
+				"supplied inline; the format is auto-detected.\n\n" +
+				"Table functions:\n\n" +
+				"- `feed_items(input)` — one row per feed entry.\n" +
+				"- `feed_info(input)` — one row of feed-level metadata.",
+			"vgi.author":             "Query.Farm",
+			"vgi.copyright":          "Copyright 2026 Query Farm LLC - https://query.farm",
+			"vgi.license":            "MIT",
+			"vgi.support_contact":    "https://github.com/Query-farm/vgi-feed/issues",
+			"vgi.support_policy_url": "https://github.com/Query-farm/vgi-feed/blob/main/README.md",
+		}),
+		vgi.WithSchemaComments(map[string]string{
+			"main": "RSS / Atom / JSON feed parsing table functions.",
+		}),
+		vgi.WithSchemaTags(map[string]map[string]string{
+			"main": {
+				"vgi.description_llm": "Feed parsing table functions: feed_items returns one row " +
+					"per feed entry, and feed_info returns one row of feed-level metadata. Both " +
+					"accept an http(s) URL or a raw RSS/Atom/JSON feed document and auto-detect " +
+					"the feed format.",
+				"vgi.description_md": "Table functions for parsing RSS / Atom / JSON feeds into rows.",
+			},
 		}),
 	)
 	feedworker.Register(w)

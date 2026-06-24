@@ -171,6 +171,30 @@ func (f *ItemsFunction) Metadata() vgi.FunctionMetadata {
 		Description: "Parse an RSS/Atom/JSON feed (URL or raw text) into one row per item",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"feed", "rss", "atom"},
+		Tags: map[string]string{
+			"vgi.columns_md": "| Column | Type | Description |\n" +
+				"| --- | --- | --- |\n" +
+				"| `seq` | BIGINT | 0-based position of the item within the feed |\n" +
+				"| `guid` | VARCHAR | Item GUID / id (empty when the feed omits one) |\n" +
+				"| `title` | VARCHAR | Item title |\n" +
+				"| `link` | VARCHAR | Item link / permalink URL |\n" +
+				"| `published` | TIMESTAMP | Publish time (NULL when absent or unparseable) |\n" +
+				"| `updated` | TIMESTAMP | Last-updated time (NULL when absent or unparseable) |\n" +
+				"| `author` | VARCHAR | Author display name or email (empty when absent) |\n" +
+				"| `categories` | VARCHAR[] | Item categories / tags (empty list when none) |\n" +
+				"| `summary` | VARCHAR | Item summary / description |\n" +
+				"| `content` | VARCHAR | Full item content (empty when not provided) |",
+		},
+		Examples: []vgi.CatalogExample{
+			{
+				SQL:         "SELECT seq, title, link, published FROM feed.main.feed_items('https://hnrss.org/frontpage') ORDER BY seq;",
+				Description: "List items from a remote RSS feed with their publish timestamps.",
+			},
+			{
+				SQL:         "SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('https://example.com/blog/atom.xml', max_items := 20);",
+				Description: "Expand each item's categories into one row per (item, category), capped at 20 items.",
+			},
+		},
 	}
 }
 
@@ -259,6 +283,27 @@ func (f *InfoFunction) Metadata() vgi.FunctionMetadata {
 		Description: "Return feed-level metadata (title, type, language, item count) for an RSS/Atom/JSON feed",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"feed", "rss", "atom"},
+		Tags: map[string]string{
+			"vgi.columns_md": "| Column | Type | Description |\n" +
+				"| --- | --- | --- |\n" +
+				"| `title` | VARCHAR | Feed title |\n" +
+				"| `description` | VARCHAR | Feed description / subtitle |\n" +
+				"| `link` | VARCHAR | Feed home / site URL |\n" +
+				"| `feed_type` | VARCHAR | Detected format: `rss`, `atom`, or `json` |\n" +
+				"| `language` | VARCHAR | Feed language code (empty when absent) |\n" +
+				"| `updated` | TIMESTAMP | Feed last-updated time (NULL when absent or unparseable) |\n" +
+				"| `item_count` | INTEGER | Number of items present in the feed |",
+		},
+		Examples: []vgi.CatalogExample{
+			{
+				SQL:         "SELECT title, feed_type, language, item_count FROM feed.main.feed_info('https://hnrss.org/frontpage');",
+				Description: "Inspect a remote feed's title, detected format, language, and item count.",
+			},
+			{
+				SQL:         "SELECT feed_type, item_count FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Example</title><item><title>Hi</title></item></channel></rss>');",
+				Description: "Parse feed-level metadata directly from a raw inline RSS document (no network access).",
+			},
+		},
 	}
 }
 
