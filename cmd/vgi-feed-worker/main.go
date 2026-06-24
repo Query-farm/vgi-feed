@@ -47,14 +47,14 @@ func main() {
 			"vgi.title": "RSS / Atom / JSON Feed Parser",
 			"vgi.keywords": "feed, rss, atom, json feed, syndication, feed parser, news, blog, " +
 				"podcast, feed reader, rss reader, parse feed, feed items, feed metadata",
-			"vgi.description_llm": "Fetch and parse RSS, Atom, and JSON feeds into SQL rows. " +
+			"vgi.doc_llm": "Fetch and parse RSS, Atom, and JSON feeds into SQL rows. " +
 				"The feed input may be an http(s) URL (fetched over HTTP) or a raw feed document " +
 				"supplied inline; the format (RSS 2.0, Atom, or JSON Feed) is auto-detected. " +
 				"Use feed_items to get one row per entry (title, link, publish/update timestamps, " +
 				"author, categories, summary, content) and feed_info for feed-level metadata " +
 				"(title, type, language, item count). Use for syndication monitoring, ingesting " +
 				"news/blog/podcast feeds, and turning feeds into queryable tables.",
-			"vgi.description_md": "# feed\n\n" +
+			"vgi.doc_md": "# feed\n\n" +
 				"Fetch and parse **RSS / Atom / JSON** feeds into DuckDB rows over Apache Arrow.\n\n" +
 				"The input is either an `http(s)` URL (fetched over HTTP) or a raw feed document " +
 				"supplied inline; the format is auto-detected.\n\n" +
@@ -80,11 +80,26 @@ func main() {
 				"category":       "parsing",
 				"topic":          "feed-syndication",
 				"vgi.source_url": "https://github.com/Query-farm/vgi-feed/blob/main/internal/feedworker/functions.go",
-				"vgi.description_llm": "Feed parsing table functions: feed_items returns one row " +
+				"vgi.doc_llm": "Feed parsing table functions: feed_items returns one row " +
 					"per feed entry, and feed_info returns one row of feed-level metadata. Both " +
 					"accept an http(s) URL or a raw RSS/Atom/JSON feed document and auto-detect " +
 					"the feed format.",
-				"vgi.description_md": "Table functions for parsing RSS / Atom / JSON feeds into rows.",
+				"vgi.doc_md": "## Feed Parsing Functions\n\n" +
+					"Table functions for turning **RSS 2.0 / Atom / JSON Feed** documents into " +
+					"DuckDB rows over Apache Arrow.\n\n" +
+					"### Functions\n\n" +
+					"- **`feed_items(input [, timeout_ms, max_items])`** — one row per feed " +
+					"entry, with sequence, GUID, title, link, publish/update timestamps, " +
+					"author, categories array, summary, and content.\n" +
+					"- **`feed_info(input [, timeout_ms])`** — a single row of feed-level " +
+					"metadata: title, description, link, detected format, language, " +
+					"last-updated time, and item count.\n\n" +
+					"### Usage\n\n" +
+					"`input` is either an `http(s)` URL (fetched over HTTP) or a raw feed " +
+					"document supplied inline; the format is auto-detected.\n\n" +
+					"### Notes\n\n" +
+					"Missing/unparseable dates surface as `NULL` timestamps and absent " +
+					"text fields as empty strings; malformed feeds raise a clean error.",
 				// VGI506 representative example queries for the schema. Each parses an
 				// inline RSS document so it runs without network access.
 				"vgi.example_queries": "SELECT seq, title, link FROM feed.main.feed_items('" + feedworker.SampleRSS + "') ORDER BY seq;\n" +

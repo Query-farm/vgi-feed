@@ -239,7 +239,7 @@ func (f *ItemsFunction) Metadata() vgi.FunctionMetadata {
 			"feed items, news, blog, podcast, rss reader, feed reader",
 		"internal/feedworker/functions.go",
 	)
-	tags["vgi.columns_md"] = "| Column | Type | Description |\n" +
+	tags["vgi.result_columns_md"] = "| Column | Type | Description |\n" +
 		"| --- | --- | --- |\n" +
 		"| `seq` | BIGINT | 0-based position of the item within the feed |\n" +
 		"| `guid` | VARCHAR | Item GUID / id (empty when the feed omits one) |\n" +
@@ -365,7 +365,7 @@ func (f *InfoFunction) Metadata() vgi.FunctionMetadata {
 			"feed type, feed title, language, item count, detect feed format",
 		"internal/feedworker/functions.go",
 	)
-	tags["vgi.columns_md"] = "| Column | Type | Description |\n" +
+	tags["vgi.result_columns_md"] = "| Column | Type | Description |\n" +
 		"| --- | --- | --- |\n" +
 		"| `title` | VARCHAR | Feed title |\n" +
 		"| `description` | VARCHAR | Feed description / subtitle |\n" +
