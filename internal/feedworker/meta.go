@@ -3,36 +3,37 @@
 package feedworker
 
 // Shared helpers for the per-object discovery/description metadata that the
-// vgi-lint strict profile (0.23.0) expects on EVERY function and table.
+// vgi-lint strict profile expects on EVERY function and table.
 //
 // Each function/table surfaces these in its FunctionMetadata.Tags:
 //   - vgi.title      (VGI124) — human-friendly display name
 //   - vgi.doc_llm    (VGI112) — Markdown narrative aimed at LLMs/agents
 //   - vgi.doc_md     (VGI113) — Markdown narrative for human docs
-//   - vgi.keywords   (VGI126) — comma-separated search terms/synonyms
-//   - vgi.source_url (VGI128) — link to the implementing source file
+//   - vgi.keywords   (VGI126/VGI138) — a JSON array of search terms/synonyms
 //
-// sourceURL(file) builds the canonical GitHub blob URL for a source file so
-// every object points at exactly where it is implemented.
+// vgi.source_url is deliberately NOT set per object: VGI139 wants source_url
+// only on the catalog object (it is set there via CatalogInfo.SourceURL), so
+// per-object source_url tags are omitted.
 
-// sourceBase is the GitHub blob URL prefix for source files in this repo,
-// pinned to main.
-const sourceBase = "https://github.com/Query-farm/vgi-feed/blob/main"
+import "encoding/json"
 
-// sourceURL builds the implementation vgi.source_url for a repo-relative file,
-// e.g. sourceURL("internal/feedworker/functions.go").
-func sourceURL(relativePath string) string {
-	return sourceBase + "/" + relativePath
+// keywordsJSON serialises the given keywords as a JSON array string, which is
+// the form VGI138 requires for vgi.keywords (e.g. ["feed","rss"]). Comma-
+// separated strings are rejected.
+func keywordsJSON(keywords ...string) string {
+	b, err := json.Marshal(keywords)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }
 
-// objectTags returns the five standard per-object discovery/description tags.
-// relativePath is the implementing file relative to the repo root.
-func objectTags(title, docLLM, docMD, keywords, relativePath string) map[string]string {
+// objectTags returns the four standard per-object discovery/description tags.
+func objectTags(title, docLLM, docMD, keywords string) map[string]string {
 	return map[string]string{
-		"vgi.title":      title,
-		"vgi.doc_llm":    docLLM,
-		"vgi.doc_md":     docMD,
-		"vgi.keywords":   keywords,
-		"vgi.source_url": sourceURL(relativePath),
+		"vgi.title":    title,
+		"vgi.doc_llm":  docLLM,
+		"vgi.doc_md":   docMD,
+		"vgi.keywords": keywords,
 	}
 }

@@ -235,9 +235,9 @@ func (f *ItemsFunction) Metadata() vgi.FunctionMetadata {
 		"Parse an RSS/Atom/JSON feed (URL or raw text) into **one row per item** — "+
 			"`seq`, `guid`, `title`, `link`, `published`, `updated`, `author`, "+
 			"`categories`, `summary`, `content`.",
-		"feed, rss, atom, json feed, syndication, items, entries, parse feed, "+
-			"feed items, news, blog, podcast, rss reader, feed reader",
-		"internal/feedworker/functions.go",
+		keywordsJSON("feed", "rss", "atom", "json feed", "syndication", "items",
+			"entries", "parse feed", "feed items", "news", "blog", "podcast",
+			"rss reader", "feed reader"),
 	)
 	tags["vgi.result_columns_md"] = "| Column | Type | Description |\n" +
 		"| --- | --- | --- |\n" +
@@ -361,9 +361,9 @@ func (f *InfoFunction) Metadata() vgi.FunctionMetadata {
 			"a feed without expanding every entry.",
 		"Return **feed-level metadata** (title, type, language, item count) for an "+
 			"RSS/Atom/JSON feed as a single row.",
-		"feed, rss, atom, json feed, syndication, feed info, feed metadata, "+
-			"feed type, feed title, language, item count, detect feed format",
-		"internal/feedworker/functions.go",
+		keywordsJSON("feed", "rss", "atom", "json feed", "syndication", "feed info",
+			"feed metadata", "feed type", "feed title", "language", "item count",
+			"detect feed format"),
 	)
 	tags["vgi.result_columns_md"] = "| Column | Type | Description |\n" +
 		"| --- | --- | --- |\n" +

@@ -45,8 +45,9 @@ func main() {
 		vgi.WithCatalogTags(map[string]string{
 			"source":    "vgi-feed",
 			"vgi.title": "RSS / Atom / JSON Feed Parser",
-			"vgi.keywords": "feed, rss, atom, json feed, syndication, feed parser, news, blog, " +
-				"podcast, feed reader, rss reader, parse feed, feed items, feed metadata",
+			// VGI138: vgi.keywords must be a JSON array of strings, not a
+			// comma-separated string.
+			"vgi.keywords": `["feed","rss","atom","json feed","syndication","feed parser","news","blog","podcast","feed reader","rss reader","parse feed","feed items","feed metadata"]`,
 			"vgi.doc_llm": "Fetch and parse RSS, Atom, and JSON feeds into SQL rows. " +
 				"The feed input may be an http(s) URL (fetched over HTTP) or a raw feed document " +
 				"supplied inline; the format (RSS 2.0, Atom, or JSON Feed) is auto-detected. " +
@@ -73,13 +74,14 @@ func main() {
 		vgi.WithSchemaTags(map[string]map[string]string{
 			"main": {
 				"vgi.title": "Feed Parsing Functions",
-				"vgi.keywords": "feed, rss, atom, json feed, syndication, feed_items, feed_info, " +
-					"parse feed, feed items, feed metadata, news, blog, podcast",
+				// VGI138: vgi.keywords must be a JSON array of strings.
+				"vgi.keywords": `["feed","rss","atom","json feed","syndication","feed_items","feed_info","parse feed","feed items","feed metadata","news","blog","podcast"]`,
 				// VGI123 classifying tags (BARE keys: domain/category/topic) for faceting.
-				"domain":         "data-integration",
-				"category":       "parsing",
-				"topic":          "feed-syndication",
-				"vgi.source_url": "https://github.com/Query-farm/vgi-feed/blob/main/internal/feedworker/functions.go",
+				"domain":   "data-integration",
+				"category": "parsing",
+				"topic":    "feed-syndication",
+				// VGI139: source_url belongs only on the catalog object (set via
+				// CatalogInfo.SourceURL); no per-schema source_url here.
 				"vgi.doc_llm": "Feed parsing table functions: feed_items returns one row " +
 					"per feed entry, and feed_info returns one row of feed-level metadata. Both " +
 					"accept an http(s) URL or a raw RSS/Atom/JSON feed document and auto-detect " +
