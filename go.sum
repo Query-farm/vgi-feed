@@ -1,9 +1,9 @@
 github.com/PuerkitoBio/goquery v1.8.0 h1:PJTF7AmFCFKk1N6V6jmKfrNH9tV5pNE6lZMkG0gta/U=
 github.com/PuerkitoBio/goquery v1.8.0/go.mod h1:ypIiRMtY7COPGk+I/YbZLbxsxn9g5ejnI2HSMtkjZvI=
-github.com/Query-farm/vgi-go v0.4.0 h1:NyHFxAhbQlFNdse3l34K3+2/ByOCGlrCmyJiCrKUZew=
-github.com/Query-farm/vgi-go v0.4.0/go.mod h1:LuHl5mhOtDaGj/j5sE0kacXG7cVrcr7E2iCgR3TBVTk=
-github.com/Query-farm/vgi-rpc-go v0.9.4 h1:Da+0bNrQkTH2rHXfDZ3i52UldUov4xJx+fWe26n/1Lk=
-github.com/Query-farm/vgi-rpc-go v0.9.4/go.mod h1:XbQBjp31eFKIZaBqmg0q9r2Mxp/LTPeAG97w1qy5gmI=
+github.com/Query-farm/vgi-go v0.7.0 h1:AFc0NHvNU2ppd4e5zyMpLir+x+dphH56+slyWh+tP/o=
+github.com/Query-farm/vgi-go v0.7.0/go.mod h1:amfpB2B25yMrfF+RDv++NY+aPsSJV64CJGe1tnc5Xg4=
+github.com/Query-farm/vgi-rpc-go v0.10.0 h1:ddteS2eF/F8Y7ZeyOfRpwjYosVv3MTTyad9U57RuaTs=
+github.com/Query-farm/vgi-rpc-go v0.10.0/go.mod h1:XbQBjp31eFKIZaBqmg0q9r2Mxp/LTPeAG97w1qy5gmI=
 github.com/andybalholm/brotli v1.2.0 h1:ukwgCxwYrmACq68yiUqwIWnGY0cTPox/M94sVwToPjQ=
 github.com/andybalholm/brotli v1.2.0/go.mod h1:rzTDkvFWvIrjDXZHkuS16NPggd91W3kUSvPlQ1pLaKY=
 github.com/andybalholm/cascadia v1.3.1 h1:nhxRkql1kdYCc8Snf7D5/D3spOX+dBgjA6u8x004T2c=

@@ -55,13 +55,38 @@ func main() {
 				"author, categories, summary, content) and feed_info for feed-level metadata " +
 				"(title, type, language, item count). Use for syndication monitoring, ingesting " +
 				"news/blog/podcast feeds, and turning feeds into queryable tables.",
-			"vgi.doc_md": "# feed\n\n" +
-				"Fetch and parse **RSS / Atom / JSON** feeds into DuckDB rows over Apache Arrow.\n\n" +
-				"The input is either an `http(s)` URL (fetched over HTTP) or a raw feed document " +
-				"supplied inline; the format is auto-detected.\n\n" +
-				"Table functions:\n\n" +
-				"- `feed_items(input)` — one row per feed entry.\n" +
-				"- `feed_info(input)` — one row of feed-level metadata.",
+			"vgi.doc_md": "# RSS, Atom & JSON Feed Parser for DuckDB\n\n" +
+				"Parse RSS, Atom, and JSON feeds directly in SQL — turn any syndication feed into " +
+				"queryable DuckDB rows over Apache Arrow, with zero glue code and automatic format detection.\n\n" +
+				"This VGI extension brings **feed parsing to SQL** for data engineers, analysts, and " +
+				"anyone who needs to ingest news, blog, or podcast feeds without writing a custom scraper. " +
+				"Point it at an `http(s)` URL and it fetches the feed over HTTP, or hand it a raw RSS / Atom / " +
+				"JSON Feed document inline — either way the format is auto-detected, so a single query " +
+				"handles RSS 2.0, Atom, and JSON Feed alike. Missing or unparseable publish dates surface as " +
+				"`NULL` timestamps, absent text fields as empty strings, and malformed feeds raise a clean, " +
+				"actionable error rather than crashing your session.\n\n" +
+				"Feed parsing and format auto-detection are powered by [gofeed](https://github.com/mmcdole/gofeed), " +
+				"a robust, widely-used Go feed parser (see the [gofeed API documentation](https://pkg.go.dev/github.com/mmcdole/gofeed)). " +
+				"It understands the [RSS 2.0 specification](https://www.rssboard.org/rss-specification), the " +
+				"[Atom Syndication Format (RFC 4287)](https://datatracker.ietf.org/doc/html/rfc4287), and the " +
+				"[JSON Feed format](https://www.jsonfeed.org/), normalizing their differences into one consistent " +
+				"row shape. HTTP fetches are bounded by a timeout and a maximum response size so a query can " +
+				"never hang or exhaust memory on a hostile feed.\n\n" +
+				"## SQL use cases & functions\n\n" +
+				"Use `feed_items(input [, timeout_ms, max_items])` to get **one row per feed entry**, with " +
+				"`seq`, `guid`, `title`, `link`, `published`, `updated`, `author`, a `categories` list, " +
+				"`summary`, and `content` columns — ideal for monitoring news and blog feeds, building a " +
+				"podcast episode catalog, deduplicating items by GUID, or `UNNEST`-ing categories for tag " +
+				"analytics. Use `feed_info(input [, timeout_ms])` for a **single row of feed-level metadata**: " +
+				"`title`, `description`, `link`, detected `feed_type` (rss / atom / json), `language`, last " +
+				"`updated` time, and `item_count` — perfect for cataloging or health-checking a set of feeds. " +
+				"For example:\n\n" +
+				"```sql\n" +
+				"SELECT title, link, published\n" +
+				"FROM feed.main.feed_items('https://example.com/feed.xml')\n" +
+				"ORDER BY published DESC;\n" +
+				"```\n\n" +
+				"Source code and issues: [github.com/Query-farm/vgi-feed](https://github.com/Query-farm/vgi-feed).",
 			"vgi.author":             "Query.Farm",
 			"vgi.copyright":          "Copyright 2026 Query Farm LLC - https://query.farm",
 			"vgi.license":            "MIT",
