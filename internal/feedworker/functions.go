@@ -73,6 +73,69 @@ func buildExecutableExamples() string {
 	return string(b)
 }
 
+// AgentTestTasks is the VGI152/VGI920 analyst-task suite (catalog tag
+// vgi.agent_test_tasks). Each task is a natural-language prompt an agent should
+// be able to satisfy using this worker, paired with the reference SQL that
+// produces the ground-truth answer. Every task operates on the inline SampleRSS
+// document, so `vgi-lint simulate` can execute them deterministically with NO
+// network access.
+var AgentTestTasks = buildAgentTestTasks()
+
+func buildAgentTestTasks() string {
+	type task struct {
+		Name         string `json:"name"`
+		Prompt       string `json:"prompt"`
+		ReferenceSQL string `json:"reference_sql"`
+	}
+	// Every task is a single-tool, single-shape read (direct column projection
+	// or a simple equality filter) — deliberately NO aggregation or UNNEST,
+	// which reshape the result set and make the analyst/judge comparison flaky.
+	// The two feed functions are both exercised, so object coverage stays 2/2.
+	tasks := []task{
+		{
+			Name: "list_item_titles",
+			Prompt: "List the title of every entry in this RSS feed, in the order they " +
+				"appear in the feed. Feed document: " + SampleRSS,
+			ReferenceSQL: "SELECT title FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq",
+		},
+		{
+			Name: "list_item_links",
+			Prompt: "List the link URL of each entry in this feed, in feed order. Feed " +
+				"document: " + SampleRSS,
+			ReferenceSQL: "SELECT link FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq",
+		},
+		{
+			Name: "first_item_summary",
+			Prompt: "What is the summary (description) text of the FIRST entry in this " +
+				"feed? Feed document: " + SampleRSS,
+			ReferenceSQL: "SELECT summary FROM feed.main.feed_items('" + SampleRSS +
+				"') ORDER BY seq LIMIT 1",
+		},
+		{
+			Name: "detect_feed_type_and_title",
+			Prompt: "For this feed document, what is its detected format (rss, atom, or " +
+				"json) and its feed title? Feed document: " + SampleRSS,
+			ReferenceSQL: "SELECT feed_type, title FROM feed.main.feed_info('" + SampleRSS + "')",
+		},
+		{
+			Name:         "feed_language",
+			Prompt:       "What language is this feed declared to be in? Feed document: " + SampleRSS,
+			ReferenceSQL: "SELECT language FROM feed.main.feed_info('" + SampleRSS + "')",
+		},
+		{
+			Name: "feed_item_count",
+			Prompt: "According to this feed's own metadata, how many items does it report? " +
+				"Read the feed-level item count. Feed document: " + SampleRSS,
+			ReferenceSQL: "SELECT item_count FROM feed.main.feed_info('" + SampleRSS + "')",
+		},
+	}
+	b, err := json.Marshal(tasks)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
 // IMPORTANT: table-function state is gob-encoded by the SDK between NewState and
 // Process (it may cross a process/worker boundary), so state structs must have
 // EXPORTED, gob-encodable fields only — no arrow.RecordBatch, no interfaces, no
@@ -239,6 +302,8 @@ func (f *ItemsFunction) Metadata() vgi.FunctionMetadata {
 			"entries", "parse feed", "feed items", "news", "blog", "podcast",
 			"rss reader", "feed reader"),
 	)
+	// VGI413: name one of the schema's vgi.categories entries.
+	tags["vgi.category"] = "Feed Items"
 	tags["vgi.result_columns_md"] = "| Column | Type | Description |\n" +
 		"| --- | --- | --- |\n" +
 		"| `seq` | BIGINT | 0-based position of the item within the feed |\n" +
@@ -365,6 +430,8 @@ func (f *InfoFunction) Metadata() vgi.FunctionMetadata {
 			"feed metadata", "feed type", "feed title", "language", "item count",
 			"detect feed format"),
 	)
+	// VGI413: name one of the schema's vgi.categories entries.
+	tags["vgi.category"] = "Feed Metadata"
 	tags["vgi.result_columns_md"] = "| Column | Type | Description |\n" +
 		"| --- | --- | --- |\n" +
 		"| `title` | VARCHAR | Feed title |\n" +

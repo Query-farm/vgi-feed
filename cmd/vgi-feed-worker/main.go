@@ -92,6 +92,10 @@ func main() {
 			"vgi.license":            "MIT",
 			"vgi.support_contact":    "https://github.com/Query-farm/vgi-feed/issues",
 			"vgi.support_policy_url": "https://github.com/Query-farm/vgi-feed/blob/main/README.md",
+			// VGI152/VGI920: analyst-task suite so `vgi-lint simulate` can measure
+			// how well agents use this worker. Every task runs against the inline
+			// SampleRSS document, so it executes with no network access.
+			"vgi.agent_test_tasks": feedworker.AgentTestTasks,
 		}),
 		vgi.WithSchemaComments(map[string]string{
 			"main": "RSS / Atom / JSON feed parsing table functions.",
@@ -101,6 +105,9 @@ func main() {
 				"vgi.title": "Feed Parsing Functions",
 				// VGI138: vgi.keywords must be a JSON array of strings.
 				"vgi.keywords": `["feed","rss","atom","json feed","syndication","feed_items","feed_info","parse feed","feed items","feed metadata","news","blog","podcast"]`,
+				// VGI413: ordered category registry for this schema; each function
+				// declares a vgi.category naming one of these entries.
+				"vgi.categories": `[{"name":"Feed Items","description":"Expand a feed's entries into one row per item (title, link, dates, author, categories, summary, content) for querying, filtering, and analytics."},{"name":"Feed Metadata","description":"Summarize a feed's top-level attributes — title, description, detected format, language, last-updated time, and item count — as a single row."}]`,
 				// VGI123 classifying tags (BARE keys: domain/category/topic) for faceting.
 				"domain":   "data-integration",
 				"category": "parsing",
