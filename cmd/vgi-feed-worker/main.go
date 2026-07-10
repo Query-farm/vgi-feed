@@ -79,13 +79,11 @@ func main() {
 				"podcast episode catalog, deduplicating items by GUID, or `UNNEST`-ing categories for tag " +
 				"analytics. Use `feed_info(input [, timeout_ms])` for a **single row of feed-level metadata**: " +
 				"`title`, `description`, `link`, detected `feed_type` (rss / atom / json), `language`, last " +
-				"`updated` time, and `item_count` — perfect for cataloging or health-checking a set of feeds. " +
-				"For example:\n\n" +
-				"```sql\n" +
-				"SELECT title, link, published\n" +
-				"FROM feed.main.feed_items('https://example.com/feed.xml')\n" +
-				"ORDER BY published DESC;\n" +
-				"```\n\n" +
+				"`updated` time, and `item_count` — perfect for cataloging or health-checking a set of feeds.\n\n" +
+				"New to the data? Browse the `feed_registry` view for a curated set of real, public " +
+				"feeds across all three formats, pick a `url`, and hand it to either table function. " +
+				"Runnable, network-free example queries are attached to each function and to the `main` " +
+				"schema.\n\n" +
 				"Source code and issues: [github.com/Query-farm/vgi-feed](https://github.com/Query-farm/vgi-feed).",
 			"vgi.author":             "Query.Farm",
 			"vgi.copyright":          "Copyright 2026 Query Farm LLC - https://query.farm",
@@ -107,7 +105,7 @@ func main() {
 				"vgi.keywords": `["feed","rss","atom","json feed","syndication","feed_items","feed_info","parse feed","feed items","feed metadata","news","blog","podcast"]`,
 				// VGI413: ordered category registry for this schema; each function
 				// declares a vgi.category naming one of these entries.
-				"vgi.categories": `[{"name":"Feed Items","description":"Expand a feed's entries into one row per item (title, link, dates, author, categories, summary, content) for querying, filtering, and analytics."},{"name":"Feed Metadata","description":"Summarize a feed's top-level attributes — title, description, detected format, language, last-updated time, and item count — as a single row."}]`,
+				"vgi.categories": `[{"name":"Feed Items","description":"Expand a feed's entries into one row per item (title, link, dates, author, categories, summary, content) for querying, filtering, and analytics."},{"name":"Feed Metadata","description":"Summarize a feed's top-level attributes — title, description, detected format, language, last-updated time, and item count — as a single row."},{"name":"Feed Sources","description":"Browse a curated registry of well-known public RSS / Atom / JSON feeds to discover feed URLs to parse."}]`,
 				// VGI123 classifying tags (BARE keys: domain/category/topic) for faceting.
 				"domain":   "data-integration",
 				"category": "parsing",

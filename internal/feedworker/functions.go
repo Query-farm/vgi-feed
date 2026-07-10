@@ -35,6 +35,48 @@ const SampleRSS = "<rss version=\"2.0\"><channel>" +
 	"<description>The second sample entry</description></item>" +
 	"</channel></rss>"
 
+// resultColumn is one entry of a vgi.result_columns_schema (VGI321): a returned
+// column's name, its DuckDB type, and a non-blank description.
+type resultColumn struct {
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
+}
+
+func columnsSchemaJSON(cols []resultColumn) string {
+	b, err := json.Marshal(cols)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
+
+// itemsColumnsSchema / infoColumnsSchema are the static result schemas for the
+// two table functions. They MUST match what Process emits (VGI910 checks this
+// under --execute): itemsSchema and infoSchema respectively.
+var itemsColumnsSchema = columnsSchemaJSON([]resultColumn{
+	{"seq", "BIGINT", "0-based position of the item within the feed."},
+	{"guid", "VARCHAR", "Item GUID / id (empty string when the feed omits one)."},
+	{"title", "VARCHAR", "Item title (empty string when absent)."},
+	{"link", "VARCHAR", "Item link / permalink URL (empty string when absent)."},
+	{"published", "TIMESTAMP", "Publish time in UTC; NULL when absent or unparseable."},
+	{"updated", "TIMESTAMP", "Last-updated time in UTC; NULL when absent or unparseable."},
+	{"author", "VARCHAR", "Author display name or email (empty string when absent)."},
+	{"categories", "VARCHAR[]", "Item categories / tags as a list (empty list when none)."},
+	{"summary", "VARCHAR", "Item summary / description (empty string when absent)."},
+	{"content", "VARCHAR", "Full item content (empty string when not provided)."},
+})
+
+var infoColumnsSchema = columnsSchemaJSON([]resultColumn{
+	{"title", "VARCHAR", "Feed title (empty string when absent)."},
+	{"description", "VARCHAR", "Feed description / subtitle (empty string when absent)."},
+	{"link", "VARCHAR", "Feed home / site URL (empty string when absent)."},
+	{"feed_type", "VARCHAR", "Detected feed format: rss, atom, or json."},
+	{"language", "VARCHAR", "Feed language code such as en-us (empty string when absent)."},
+	{"updated", "TIMESTAMP", "Feed last-updated time in UTC; NULL when absent or unparseable."},
+	{"item_count", "INTEGER", "Number of items present in the feed."},
+})
+
 // executableExamples is the VGI509 guaranteed-runnable, catalog-qualified
 // example set. Every sql is self-contained, re-runnable against an attached
 // feed worker, and parses inline RSS text so it needs no network. We omit
@@ -127,6 +169,13 @@ func buildAgentTestTasks() string {
 			Prompt: "According to this feed's own metadata, how many items does it report? " +
 				"Read the feed-level item count. Feed document: " + SampleRSS,
 			ReferenceSQL: "SELECT item_count FROM feed.main.feed_info('" + SampleRSS + "')",
+		},
+		{
+			Name: "registry_json_feeds",
+			Prompt: "This worker ships a built-in registry of well-known public feeds. " +
+				"Using that registry, list the name of every feed that is published in " +
+				"the JSON Feed (json) format.",
+			ReferenceSQL: "SELECT name FROM feed.main.feed_registry WHERE feed_type = 'json' ORDER BY name",
 		},
 	}
 	b, err := json.Marshal(tasks)
@@ -304,18 +353,10 @@ func (f *ItemsFunction) Metadata() vgi.FunctionMetadata {
 	)
 	// VGI413: name one of the schema's vgi.categories entries.
 	tags["vgi.category"] = "Feed Items"
-	tags["vgi.result_columns_md"] = "| Column | Type | Description |\n" +
-		"| --- | --- | --- |\n" +
-		"| `seq` | BIGINT | 0-based position of the item within the feed |\n" +
-		"| `guid` | VARCHAR | Item GUID / id (empty when the feed omits one) |\n" +
-		"| `title` | VARCHAR | Item title |\n" +
-		"| `link` | VARCHAR | Item link / permalink URL |\n" +
-		"| `published` | TIMESTAMP | Publish time (NULL when absent or unparseable) |\n" +
-		"| `updated` | TIMESTAMP | Last-updated time (NULL when absent or unparseable) |\n" +
-		"| `author` | VARCHAR | Author display name or email (empty when absent) |\n" +
-		"| `categories` | VARCHAR[] | Item categories / tags (empty list when none) |\n" +
-		"| `summary` | VARCHAR | Item summary / description |\n" +
-		"| `content` | VARCHAR | Full item content (empty when not provided) |"
+	// VGI307/VGI321: structured static result schema (JSON array of
+	// {name,type,description}). Types are real DuckDB types and must match what
+	// Process actually emits (VGI910 verifies under --execute).
+	tags["vgi.result_columns_schema"] = itemsColumnsSchema
 	tags["vgi.executable_examples"] = executableExamples
 	return vgi.FunctionMetadata{
 		Description: "Parse an RSS/Atom/JSON feed (URL or raw text) into one row per item",
@@ -432,15 +473,10 @@ func (f *InfoFunction) Metadata() vgi.FunctionMetadata {
 	)
 	// VGI413: name one of the schema's vgi.categories entries.
 	tags["vgi.category"] = "Feed Metadata"
-	tags["vgi.result_columns_md"] = "| Column | Type | Description |\n" +
-		"| --- | --- | --- |\n" +
-		"| `title` | VARCHAR | Feed title |\n" +
-		"| `description` | VARCHAR | Feed description / subtitle |\n" +
-		"| `link` | VARCHAR | Feed home / site URL |\n" +
-		"| `feed_type` | VARCHAR | Detected format: `rss`, `atom`, or `json` |\n" +
-		"| `language` | VARCHAR | Feed language code (empty when absent) |\n" +
-		"| `updated` | TIMESTAMP | Feed last-updated time (NULL when absent or unparseable) |\n" +
-		"| `item_count` | INTEGER | Number of items present in the feed |"
+	// VGI307/VGI321: structured static result schema (JSON array of
+	// {name,type,description}). Types are real DuckDB types and must match what
+	// Process actually emits (VGI910 verifies under --execute).
+	tags["vgi.result_columns_schema"] = infoColumnsSchema
 	return vgi.FunctionMetadata{
 		Description: "Return feed-level metadata (title, type, language, item count) for an RSS/Atom/JSON feed",
 		Stability:   vgi.StabilityVolatile,
@@ -504,8 +540,10 @@ func NewInfoFunction() vgi.TableFunction {
 	return vgi.AsTableFunction[infoState](&InfoFunction{})
 }
 
-// Register registers all feed table functions on the worker.
+// Register registers all feed table functions and the browsable feed_registry
+// view on the worker.
 func Register(w *vgi.Worker) {
 	w.RegisterTable(NewItemsFunction())
 	w.RegisterTable(NewInfoFunction())
+	RegisterRegistry(w)
 }
