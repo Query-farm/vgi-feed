@@ -115,6 +115,25 @@ func buildExecutableExamples() string {
 	return string(b)
 }
 
+// SchemaExampleQueries is the main schema's vgi.example_queries value: a JSON
+// list of {description, sql} so each example carries a human-readable
+// description (VGI506/VGI515). Every query parses an inline RSS document, so it
+// runs with no network access.
+var SchemaExampleQueries = exampleQueriesJSON(
+	[2]string{
+		"List the items parsed from an inline RSS 2.0 feed, ordered by position.",
+		"SELECT seq, title, link FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq;",
+	},
+	[2]string{
+		"Count the items in an inline feed.",
+		"SELECT count(*) AS items FROM feed.main.feed_items('" + SampleRSS + "');",
+	},
+	[2]string{
+		"Read feed-level metadata: title, detected format, language, and item count.",
+		"SELECT title, feed_type, language, item_count FROM feed.main.feed_info('" + SampleRSS + "');",
+	},
+)
+
 // AgentTestTasks is the VGI152/VGI920 analyst-task suite (catalog tag
 // vgi.agent_test_tasks). Each task is a natural-language prompt an agent should
 // be able to satisfy using this worker, paired with the reference SQL that
@@ -328,6 +347,22 @@ type itemsState struct {
 	Cursor[Item]
 }
 
+// itemsExamples are feed_items' object-level examples. They are surfaced BOTH as
+// FunctionMetadata.Examples (the native duckdb_functions().examples carrier) and,
+// via exampleQueriesFromCatalog, as the vgi.example_queries tag so each example
+// keeps its description (VGI515). Every SQL parses inline RSS text, so it runs
+// with no network access.
+var itemsExamples = []vgi.CatalogExample{
+	{
+		SQL:         "SELECT seq, title, link FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq;",
+		Description: "List items parsed directly from an inline RSS 2.0 document (no network access).",
+	},
+	{
+		SQL:         "SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('" + SampleRSS + "', max_items := 20);",
+		Description: "Expand each item's categories into one row per (item, category), capped at 20 items.",
+	},
+}
+
 // ItemsFunction returns one row per feed item.
 type ItemsFunction struct{}
 
@@ -358,21 +393,15 @@ func (f *ItemsFunction) Metadata() vgi.FunctionMetadata {
 	// Process actually emits (VGI910 verifies under --execute).
 	tags["vgi.result_columns_schema"] = itemsColumnsSchema
 	tags["vgi.executable_examples"] = executableExamples
+	// VGI515: carry the object-level examples through vgi.example_queries too, so
+	// each one keeps its description (the native examples carrier drops it).
+	tags["vgi.example_queries"] = exampleQueriesFromCatalog(itemsExamples)
 	return vgi.FunctionMetadata{
 		Description: "Parse an RSS/Atom/JSON feed (URL or raw text) into one row per item",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"feed", "rss", "atom"},
 		Tags:        tags,
-		Examples: []vgi.CatalogExample{
-			{
-				SQL:         "SELECT seq, title, link FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq;",
-				Description: "List items parsed directly from an inline RSS 2.0 document (no network access).",
-			},
-			{
-				SQL:         "SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('" + SampleRSS + "', max_items := 20);",
-				Description: "Expand each item's categories into one row per (item, category), capped at 20 items.",
-			},
-		},
+		Examples:    itemsExamples,
 	}
 }
 
@@ -449,6 +478,21 @@ type infoState struct {
 	Cursor[Info]
 }
 
+// infoExamples are feed_info's object-level examples, surfaced both as
+// FunctionMetadata.Examples and (via exampleQueriesFromCatalog) as the
+// vgi.example_queries tag so each keeps its description (VGI515). Both parse
+// inline RSS text and run with no network access.
+var infoExamples = []vgi.CatalogExample{
+	{
+		SQL:         "SELECT title, feed_type, language, item_count FROM feed.main.feed_info('" + SampleRSS + "');",
+		Description: "Inspect an inline feed's title, detected format, language, and item count (no network access).",
+	},
+	{
+		SQL:         "SELECT feed_type, item_count FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Example</title><item><title>Hi</title></item></channel></rss>');",
+		Description: "Parse feed-level metadata directly from a raw inline RSS document (no network access).",
+	},
+}
+
 // InfoFunction returns one row of feed-level metadata.
 type InfoFunction struct{}
 
@@ -477,21 +521,15 @@ func (f *InfoFunction) Metadata() vgi.FunctionMetadata {
 	// {name,type,description}). Types are real DuckDB types and must match what
 	// Process actually emits (VGI910 verifies under --execute).
 	tags["vgi.result_columns_schema"] = infoColumnsSchema
+	// VGI515: also carry the examples through vgi.example_queries so each keeps
+	// its description (the native examples carrier drops it).
+	tags["vgi.example_queries"] = exampleQueriesFromCatalog(infoExamples)
 	return vgi.FunctionMetadata{
 		Description: "Return feed-level metadata (title, type, language, item count) for an RSS/Atom/JSON feed",
 		Stability:   vgi.StabilityVolatile,
 		Categories:  []string{"feed", "rss", "atom"},
 		Tags:        tags,
-		Examples: []vgi.CatalogExample{
-			{
-				SQL:         "SELECT title, feed_type, language, item_count FROM feed.main.feed_info('" + SampleRSS + "');",
-				Description: "Inspect an inline feed's title, detected format, language, and item count (no network access).",
-			},
-			{
-				SQL:         "SELECT feed_type, item_count FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Example</title><item><title>Hi</title></item></channel></rss>');",
-				Description: "Parse feed-level metadata directly from a raw inline RSS document (no network access).",
-			},
-		},
+		Examples:    infoExamples,
 	}
 }
 

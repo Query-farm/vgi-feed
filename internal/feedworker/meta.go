@@ -15,7 +15,35 @@ package feedworker
 // only on the catalog object (it is set there via CatalogInfo.SourceURL), so
 // per-object source_url tags are omitted.
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/Query-farm/vgi-go/vgi"
+)
+
+// exampleQueriesFromCatalog serialises a function's []vgi.CatalogExample as the
+// JSON array of {"description","sql"} objects that the vgi.example_queries tag
+// requires (VGI515). The VGI extension surfaces a function's Meta.examples into
+// duckdb_functions().examples as a bare VARCHAR[] of SQL strings that carries NO
+// per-example description, so vgi-lint reads those examples description-less.
+// Emitting the SAME examples through this tag (which DOES carry descriptions)
+// makes vgi-lint dedupe them by SQL and keep the described copy, so every
+// example a user sees in the catalog has a human-readable description.
+func exampleQueriesFromCatalog(examples []vgi.CatalogExample) string {
+	type ex struct {
+		Description string `json:"description"`
+		SQL         string `json:"sql"`
+	}
+	out := make([]ex, 0, len(examples))
+	for _, e := range examples {
+		out = append(out, ex{Description: e.Description, SQL: e.SQL})
+	}
+	b, err := json.Marshal(out)
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
+}
 
 // keywordsJSON serialises the given keywords as a JSON array string, which is
 // the form VGI138 requires for vgi.keywords (e.g. ["feed","rss"]). Comma-

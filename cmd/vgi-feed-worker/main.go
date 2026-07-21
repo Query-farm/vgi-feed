@@ -132,11 +132,11 @@ func main() {
 					"### Notes\n\n" +
 					"Missing/unparseable dates surface as `NULL` timestamps and absent " +
 					"text fields as empty strings; malformed feeds raise a clean error.",
-				// VGI506 representative example queries for the schema. Each parses an
-				// inline RSS document so it runs without network access.
-				"vgi.example_queries": "SELECT seq, title, link FROM feed.main.feed_items('" + feedworker.SampleRSS + "') ORDER BY seq;\n" +
-					"SELECT count(*) FROM feed.main.feed_items('" + feedworker.SampleRSS + "');\n" +
-					"SELECT title, feed_type, language, item_count FROM feed.main.feed_info('" + feedworker.SampleRSS + "');",
+				// VGI506/VGI515 representative example queries for the schema, as a
+				// JSON list of {description, sql} so each carries a human-readable
+				// description. Each parses an inline RSS document so it runs without
+				// network access.
+				"vgi.example_queries": feedworker.SchemaExampleQueries,
 			},
 		}),
 	)
