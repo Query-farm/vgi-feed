@@ -34,10 +34,26 @@
 # Optional:
 #   TRANSPORT          subprocess (default) | http | unix
 #   STAGE              scratch dir for the preprocessed test tree (default: mktemp)
+#   TEST_PATTERN       runner glob/path to execute (default: test/sql/*). All
+#                      files are always staged; this only narrows what RUNS —
+#                      e.g. a single OFFLINE file for the Docker image_test.
+#   SKIP_MOCK          if non-empty, do NOT build/start the mock feed server and
+#                      do NOT set VGI_FEED_TEST_URL. Used by the Docker image_test
+#                      (the container has no reachable mock backend), which runs
+#                      only the OFFLINE test/sql/feed_offline.test (inline feed
+#                      documents, no network fetch). Default (unset): mock runs,
+#                      exactly as before.
+#   VGI_FEED_WORKER    for TRANSPORT=http, if this is ALREADY an http(s):// URL
+#                      (e.g. a pre-launched container in the image_test), it is
+#                      used as the ATTACH LOCATION as-is and no local worker is
+#                      spawned. Otherwise it is the worker binary path, as before.
 set -euo pipefail
 
 : "${HAYBARN_UNITTEST:?path to the haybarn-unittest binary}"
 : "${VGI_FEED_WORKER:?worker LOCATION (the built Go worker binary)}"
+
+SKIP_MOCK="${SKIP_MOCK:-}"
+TEST_PATTERN="${TEST_PATTERN:-test/sql/*}"
 
 TRANSPORT="${TRANSPORT:-subprocess}"
 case "$TRANSPORT" in
@@ -73,29 +89,37 @@ trap cleanup EXIT
 # --- Start the mock feed server (the .test files fetch from it; all transports) -
 # Build + launch the repo's standalone mock server on a free port; it prints
 # "PORT:<n>" on stdout (see cmd/mockserver/main.go). We capture that, export
-# VGI_FEED_TEST_URL. The mock is required for every transport — the worker still
-# makes the HTTP fetch.
-MOCK_BIN="$STAGE/mockserver"
-echo "Building mock feed server ..."
-( cd "$REPO" && go build -o "$MOCK_BIN" ./cmd/mockserver )
+# VGI_FEED_TEST_URL. The mock is required for every transport whose suite fetches
+# feeds over HTTP — the worker still makes the HTTP fetch.
+#
+# SKIP_MOCK short-circuits this whole block: the Docker image_test runs only the
+# OFFLINE feed_offline.test (inline documents, no fetch), where the worker lives
+# in a container and the host mock server would be unreachable anyway.
+if [ -z "$SKIP_MOCK" ]; then
+  MOCK_BIN="$STAGE/mockserver"
+  echo "Building mock feed server ..."
+  ( cd "$REPO" && go build -o "$MOCK_BIN" ./cmd/mockserver )
 
-MOCK_PORT_FILE="$(mktemp)"
-"$MOCK_BIN" --addr 127.0.0.1:0 >"$MOCK_PORT_FILE" 2>/dev/null &
-MOCK_PID=$!
+  MOCK_PORT_FILE="$(mktemp)"
+  "$MOCK_BIN" --addr 127.0.0.1:0 >"$MOCK_PORT_FILE" 2>/dev/null &
+  MOCK_PID=$!
 
-PORT=""
-for _ in $(seq 1 30); do
-  PORT="$(sed -n 's/^PORT:\([0-9][0-9]*\)$/\1/p' "$MOCK_PORT_FILE" 2>/dev/null | head -1)"
-  [ -n "$PORT" ] && break
-  sleep 0.2
-done
-if [ -z "$PORT" ]; then
-  echo "ERROR: mock server did not report a port" >&2
-  exit 1
+  PORT=""
+  for _ in $(seq 1 30); do
+    PORT="$(sed -n 's/^PORT:\([0-9][0-9]*\)$/\1/p' "$MOCK_PORT_FILE" 2>/dev/null | head -1)"
+    [ -n "$PORT" ] && break
+    sleep 0.2
+  done
+  if [ -z "$PORT" ]; then
+    echo "ERROR: mock server did not report a port" >&2
+    exit 1
+  fi
+  rm -f "$MOCK_PORT_FILE"
+  export VGI_FEED_TEST_URL="http://127.0.0.1:$PORT"
+  echo "Mock feed server listening on $VGI_FEED_TEST_URL (pid $MOCK_PID)"
+else
+  echo "SKIP_MOCK set — not starting the mock feed server (OFFLINE suite only)."
 fi
-rm -f "$MOCK_PORT_FILE"
-export VGI_FEED_TEST_URL="http://127.0.0.1:$PORT"
-echo "Mock feed server listening on $VGI_FEED_TEST_URL (pid $MOCK_PID)"
 
 # --- Per-transport: resolve VGI_FEED_WORKER (the ATTACH LOCATION) ------------
 # subprocess keeps the binary path (extension spawns stdio). http/unix start the
@@ -106,31 +130,39 @@ case "$TRANSPORT" in
     ;;
 
   http)
-    # Start the worker in --http mode; it prints "PORT:<n>" once listening.
-    WORKER_PORT_FILE="$(mktemp)"
-    echo "Transport: http — starting '$WORKER_BIN --http' ..."
-    "$WORKER_BIN" --http >"$WORKER_PORT_FILE" 2>/dev/null &
-    WORKER_PID=$!
-    WPORT=""
-    for _ in $(seq 1 50); do
-      WPORT="$(sed -n 's/^PORT:\([0-9][0-9]*\)$/\1/p' "$WORKER_PORT_FILE" 2>/dev/null | head -1)"
-      [ -n "$WPORT" ] && break
-      # Bail early if the worker died.
-      kill -0 "$WORKER_PID" 2>/dev/null || { echo "ERROR: http worker exited before reporting a port" >&2; cat "$WORKER_PORT_FILE" >&2 || true; exit 1; }
-      sleep 0.2
-    done
-    rm -f "$WORKER_PORT_FILE"
-    if [ -z "$WPORT" ]; then
-      echo "ERROR: http worker did not report a port" >&2
-      exit 1
+    # Honor a pre-launched HTTP worker (e.g. a running container in the Docker
+    # image_test): if VGI_FEED_WORKER is already an http(s):// URL, ATTACH it
+    # as-is and skip spawning a local binary. The httpfs injection below still
+    # runs because TRANSPORT=http.
+    if [[ "${VGI_FEED_WORKER:-}" =~ ^https?:// ]]; then
+      echo "Transport: http — using pre-launched worker at $VGI_FEED_WORKER"
+    else
+      # Start the worker in --http mode; it prints "PORT:<n>" once listening.
+      WORKER_PORT_FILE="$(mktemp)"
+      echo "Transport: http — starting '$WORKER_BIN --http' ..."
+      "$WORKER_BIN" --http >"$WORKER_PORT_FILE" 2>/dev/null &
+      WORKER_PID=$!
+      WPORT=""
+      for _ in $(seq 1 50); do
+        WPORT="$(sed -n 's/^PORT:\([0-9][0-9]*\)$/\1/p' "$WORKER_PORT_FILE" 2>/dev/null | head -1)"
+        [ -n "$WPORT" ] && break
+        # Bail early if the worker died.
+        kill -0 "$WORKER_PID" 2>/dev/null || { echo "ERROR: http worker exited before reporting a port" >&2; cat "$WORKER_PORT_FILE" >&2 || true; exit 1; }
+        sleep 0.2
+      done
+      rm -f "$WORKER_PORT_FILE"
+      if [ -z "$WPORT" ]; then
+        echo "ERROR: http worker did not report a port" >&2
+        exit 1
+      fi
+      # The extension treats the LOCATION as a base and POSTs each RPC method at
+      # <LOCATION>/<method> (e.g. /catalog_attach). The SDK mounts those methods
+      # at the server root (empty prefix), so the LOCATION must be the bare
+      # scheme://host:port with NO path. Appending /vgi would make every method
+      # 404 — which the runner silently skips as an error "matching 'HTTP'".
+      export VGI_FEED_WORKER="http://127.0.0.1:$WPORT"
+      echo "HTTP worker listening on $VGI_FEED_WORKER (pid $WORKER_PID)"
     fi
-    # The extension treats the LOCATION as a base and POSTs each RPC method at
-    # <LOCATION>/<method> (e.g. /catalog_attach). The SDK mounts those methods
-    # at the server root (empty prefix), so the LOCATION must be the bare
-    # scheme://host:port with NO path. Appending /vgi would make every method
-    # 404 — which the runner silently skips as an error "matching 'HTTP'".
-    export VGI_FEED_WORKER="http://127.0.0.1:$WPORT"
-    echo "HTTP worker listening on $VGI_FEED_WORKER (pid $WORKER_PID)"
     ;;
 
   unix)
@@ -223,10 +255,10 @@ rm -f "$STAGE/test/_warm.test"
 # "All tests were skipped" and the job would go GREEN having run nothing — a
 # fake pass. We detect that and fail explicitly. A real run prints
 # "All tests passed (N assertions ...)".
-echo "Running suite (transport: $TRANSPORT, worker: $VGI_FEED_WORKER) ..."
+echo "Running suite (transport: $TRANSPORT, worker: $VGI_FEED_WORKER, pattern: $TEST_PATTERN) ..."
 RUN_LOG="$STAGE/run.log"
 set +e
-"$HAYBARN_UNITTEST" "test/sql/*" 2>&1 | tee "$RUN_LOG"
+"$HAYBARN_UNITTEST" "$TEST_PATTERN" 2>&1 | tee "$RUN_LOG"
 RUN_RC="${PIPESTATUS[0]}"
 set -e
 

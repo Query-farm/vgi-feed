@@ -1,0 +1,83 @@
+# name: test/sql/feed_offline.test
+# description: OFFLINE feed_items / feed_info over inline raw RSS/Atom/JSON
+#              documents (no network, no mock server). Used by the Docker
+#              image_test to exercise the container's transports without a
+#              reachable mock backend; also runs in the normal CI matrix.
+# group: [vgi_feed]
+
+require-env VGI_FEED_WORKER
+
+# haybarn-unittest does NOT autoload the extension for `require vgi` (it is
+# silently SKIPPED). Load it explicitly instead.
+statement ok
+LOAD vgi;
+
+statement ok
+ATTACH 'feed' AS feed (TYPE vgi, LOCATION '${VGI_FEED_WORKER}');
+
+# ---- feed_info detects the format of each inline document ----
+
+query T
+SELECT feed_type
+FROM feed.feed_info('<?xml version="1.0"?><rss version="2.0"><channel><title>Inline RSS</title><item><title>a</title></item><item><title>b</title></item></channel></rss>');
+----
+rss
+
+query T
+SELECT feed_type
+FROM feed.feed_info('<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom"><title>Inline Atom</title><id>urn:x</id><entry><title>a</title><id>u1</id></entry></feed>');
+----
+atom
+
+query T
+SELECT feed_type
+FROM feed.feed_info('{"version":"https://jsonfeed.org/version/1.1","title":"Inline JSON","items":[{"id":"1","title":"x"},{"id":"2","title":"y"}]}');
+----
+json
+
+# ---- feed_info title + item_count from an inline RSS document ----
+
+query TI
+SELECT title, item_count
+FROM feed.feed_info('<?xml version="1.0"?><rss version="2.0"><channel><title>Inline RSS</title><item><title>a</title></item><item><title>b</title></item></channel></rss>');
+----
+Inline RSS	2
+
+# ---- feed_items expands the inline RSS entries (ordered by seq) ----
+
+query I
+SELECT count(*)
+FROM feed.feed_items('<?xml version="1.0"?><rss version="2.0"><channel><title>t</title><item><title>First Inline</title><link>https://x/1</link></item><item><title>Second Inline</title><link>https://x/2</link></item></channel></rss>');
+----
+2
+
+query TT
+SELECT title, link
+FROM feed.feed_items('<?xml version="1.0"?><rss version="2.0"><channel><title>t</title><item><title>First Inline</title><link>https://x/1</link></item><item><title>Second Inline</title><link>https://x/2</link></item></channel></rss>')
+ORDER BY seq;
+----
+First Inline	https://x/1
+Second Inline	https://x/2
+
+# ---- max_items named option caps the inline result ----
+
+query I
+SELECT count(*)
+FROM feed.feed_items('<?xml version="1.0"?><rss version="2.0"><channel><title>t</title><item><title>a</title></item><item><title>b</title></item></channel></rss>', max_items := 1);
+----
+1
+
+# ---- JSON Feed items parse directly from inline text ----
+
+query T
+SELECT title
+FROM feed.feed_items('{"version":"https://jsonfeed.org/version/1.1","title":"j","items":[{"id":"1","title":"JSON One"}]}')
+ORDER BY seq;
+----
+JSON One
+
+# ---- malformed inline text surfaces a clean error ----
+
+statement error
+SELECT * FROM feed.feed_items('<rss><channel><title>broken</title><item><title>oops');
+----
