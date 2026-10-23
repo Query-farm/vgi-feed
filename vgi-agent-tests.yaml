@@ -1,0 +1,24 @@
+# Private graders for the agent-suitability suite (`vgi-lint simulate`).
+#
+# The prompts are published in the catalog's vgi.agent_test_tasks tag
+# (internal/feedworker/functions.go); the answers live here, keyed by task
+# name, so the agent being graded never sees them. vgi-lint discovers this
+# file in the directory it runs from. Every reference parses the inline
+# SampleRSS document (or reads the built-in feed_registry), so the suite needs
+# no network access.
+
+tasks:
+  - name: list_item_titles
+    reference_sql: "SELECT title FROM feed.main.feed_items('<rss version=\"2.0\"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>') ORDER BY seq"
+  - name: list_item_links
+    reference_sql: "SELECT link FROM feed.main.feed_items('<rss version=\"2.0\"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>') ORDER BY seq"
+  - name: first_item_summary
+    reference_sql: "SELECT summary FROM feed.main.feed_items('<rss version=\"2.0\"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>') ORDER BY seq LIMIT 1"
+  - name: detect_feed_type_and_title
+    reference_sql: "SELECT feed_type, title FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>')"
+  - name: feed_language
+    reference_sql: "SELECT language FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>')"
+  - name: feed_item_count
+    reference_sql: "SELECT item_count FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>')"
+  - name: registry_json_feeds
+    reference_sql: "SELECT name FROM feed.main.feed_registry WHERE feed_type = 'json' ORDER BY name"

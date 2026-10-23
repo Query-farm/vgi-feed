@@ -96,10 +96,6 @@ func buildExecutableExamples() string {
 			SQL:         "SELECT seq, title, link FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq",
 		},
 		{
-			Description: "Count the items in an inline feed.",
-			SQL:         "SELECT count(*) AS items FROM feed.main.feed_items('" + SampleRSS + "')",
-		},
-		{
 			Description: "Expand each item's categories into one row per (item, category).",
 			SQL:         "SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq",
 		},
@@ -136,17 +132,18 @@ var SchemaExampleQueries = exampleQueriesJSON(
 
 // AgentTestTasks is the VGI152/VGI920 analyst-task suite (catalog tag
 // vgi.agent_test_tasks). Each task is a natural-language prompt an agent should
-// be able to satisfy using this worker, paired with the reference SQL that
-// produces the ground-truth answer. Every task operates on the inline SampleRSS
-// document, so `vgi-lint simulate` can execute them deterministically with NO
-// network access.
+// be able to satisfy using this worker. Only name + prompt are published
+// (VGI416): each task's grader reference SQL lives in the private repo-root
+// sidecar vgi-agent-tests.yaml, keyed by task name, which vgi-lint discovers on
+// its own. Every task operates on the inline SampleRSS document, so `vgi-lint
+// simulate` can execute them deterministically with NO network access. Keep the
+// sidecar in sync when a prompt or SampleRSS changes.
 var AgentTestTasks = buildAgentTestTasks()
 
 func buildAgentTestTasks() string {
 	type task struct {
-		Name         string `json:"name"`
-		Prompt       string `json:"prompt"`
-		ReferenceSQL string `json:"reference_sql"`
+		Name   string `json:"name"`
+		Prompt string `json:"prompt"`
 	}
 	// Every task is a single-tool, single-shape read (direct column projection
 	// or a simple equality filter) — deliberately NO aggregation or UNNEST,
@@ -157,44 +154,36 @@ func buildAgentTestTasks() string {
 			Name: "list_item_titles",
 			Prompt: "List the title of every entry in this RSS feed, in the order they " +
 				"appear in the feed. Feed document: " + SampleRSS,
-			ReferenceSQL: "SELECT title FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq",
 		},
 		{
 			Name: "list_item_links",
 			Prompt: "List the link URL of each entry in this feed, in feed order. Feed " +
 				"document: " + SampleRSS,
-			ReferenceSQL: "SELECT link FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq",
 		},
 		{
 			Name: "first_item_summary",
 			Prompt: "What is the summary (description) text of the FIRST entry in this " +
 				"feed? Feed document: " + SampleRSS,
-			ReferenceSQL: "SELECT summary FROM feed.main.feed_items('" + SampleRSS +
-				"') ORDER BY seq LIMIT 1",
 		},
 		{
 			Name: "detect_feed_type_and_title",
 			Prompt: "For this feed document, what is its detected format (rss, atom, or " +
 				"json) and its feed title? Feed document: " + SampleRSS,
-			ReferenceSQL: "SELECT feed_type, title FROM feed.main.feed_info('" + SampleRSS + "')",
 		},
 		{
-			Name:         "feed_language",
-			Prompt:       "What language is this feed declared to be in? Feed document: " + SampleRSS,
-			ReferenceSQL: "SELECT language FROM feed.main.feed_info('" + SampleRSS + "')",
+			Name:   "feed_language",
+			Prompt: "What language is this feed declared to be in? Feed document: " + SampleRSS,
 		},
 		{
 			Name: "feed_item_count",
 			Prompt: "According to this feed's own metadata, how many items does it report? " +
 				"Read the feed-level item count. Feed document: " + SampleRSS,
-			ReferenceSQL: "SELECT item_count FROM feed.main.feed_info('" + SampleRSS + "')",
 		},
 		{
 			Name: "registry_json_feeds",
 			Prompt: "This worker ships a built-in registry of well-known public feeds. " +
 				"Using that registry, list the name of every feed that is published in " +
 				"the JSON Feed (json) format.",
-			ReferenceSQL: "SELECT name FROM feed.main.feed_registry WHERE feed_type = 'json' ORDER BY name",
 		},
 	}
 	b, err := json.Marshal(tasks)
