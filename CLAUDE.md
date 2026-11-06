@@ -145,7 +145,8 @@ Mirrors `vgi-scim`'s start/stop pattern:
    `LOCATION`) and `VGI_FEED_TEST_URL` (`http://127.0.0.1:<n>`, the base URL; the
    `.test` files append `/rss`, `/atom`, `/json`, `/malformed`), both read by the
    `.test` files.
-4. `haybarn-unittest --test-dir . "test/sql/*"` runs the suite; the haybarn exit
+4. `haybarn-unittest --keep-home --test-dir . "test/sql/*"` runs the suite
+   (2.0 isolates `$HOME`; `--keep-home` lets it see the installed `vgi`); the haybarn exit
    status is captured and returned, and a shell `trap` kills the mock server.
 
 `cmd/mockserver` and the Go tests share `internal/mockfeed.NewHandler`.

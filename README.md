@@ -94,10 +94,12 @@ make test-sql     # haybarn SQL end-to-end against a local mock feed server
 make test         # both
 ```
 
-`make test-sql` needs `haybarn-unittest` on `PATH`:
+`make test-sql` needs Haybarn 2.0's `haybarn-unittest` on `PATH` (the worker
+speaks VGI protocol `vgi.v3` / 3.1, which only Haybarn 2.0's `vgi` extension
+accepts):
 
 ```sh
-uv tool install haybarn-unittest
+uv tool install --prerelease allow 'haybarn-unittest>=2.0.0rc11,<2.1'
 export PATH="$HOME/.local/bin:$PATH"
 ```
 

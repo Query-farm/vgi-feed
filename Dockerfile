@@ -12,12 +12,13 @@
 # syntax=docker/dockerfile:1
 
 # ---- build stage -----------------------------------------------------------
-# CGO_ENABLED=1 is REQUIRED: the vgi-go SDK links DuckDB (via the duckdb-go
-# bindings) statically, so a CGO_ENABLED=0 build fails to link. golang:1.26 is
-# pinned on bookworm so the binary links against the same glibc the slim runtime
-# ships; gcc/g++ back the CGO link. Modules are fetched from the network (go.mod
-# uses no local-path replaces), so no vendoring is needed. BuildKit cache mounts
-# persist the module + build caches across rebuilds.
+# CGO_ENABLED=1 is REQUIRED: the vgi-go SDK links the Haybarn 2.0 engine (via
+# the haybarn-go bindings) statically, so a CGO_ENABLED=0 build fails to link.
+# golang:1.26 is pinned on bookworm so the binary links against the same glibc
+# the slim runtime ships; gcc/g++ back the CGO link. Modules are fetched from
+# the network (go.mod has no local-path replaces; the flatbuffers replace is a
+# module version), so no vendoring is needed. BuildKit cache mounts persist the
+# module + build caches across rebuilds.
 FROM golang:1.26-bookworm AS build
 WORKDIR /src
 

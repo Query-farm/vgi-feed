@@ -89,7 +89,10 @@ extension from the Haybarn community channel:
    The resulting binary is a self-contained stdio worker the extension can
    spawn; `VGI_FEED_WORKER` (an absolute path) is the ATTACH `LOCATION`.
 2. **Download the runner** — the `haybarn_unittest-linux-amd64.zip` asset from
-   the latest Haybarn release.
+   the newest Haybarn **2.0** release (`haybarn-v2.0.*`; the worker speaks
+   `vgi.v3` / 3.1, which only Haybarn 2.0's community `vgi` extension accepts).
+   `gh release view` with no tag still returns the 1.5 line, so CI selects the
+   newest `haybarn-v2.0` tag from `gh release list`.
 3. **Preprocess** — [`preprocess-require.awk`](preprocess-require.awk) rewrites
    any `require <ext>` gate into an explicit signed `INSTALL <ext> FROM
    {community,core}; LOAD <ext>;`. This repo's tests already use an explicit
@@ -99,7 +102,8 @@ extension from the Haybarn community channel:
    repo's `mockserver` on a free port (exporting `VGI_FEED_TEST_URL`), stages
    the preprocessed tree, resolves `VGI_FEED_WORKER` for the selected transport,
    warms the extension cache once (`INSTALL vgi FROM community`), then runs the
-   suite in a single `haybarn-unittest` invocation. Any failed assertion exits
+   suite in a single `haybarn-unittest --keep-home` invocation (2.0 isolates
+   `$HOME` otherwise, hiding the installed `vgi`). Any failed assertion exits
    non-zero and fails the job. The mock server (and any out-of-band worker) is
    killed on exit.
 

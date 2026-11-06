@@ -234,7 +234,9 @@ cd "$STAGE"
 # Warm the extension cache once: vgi from the signed community channel. A miss
 # here is only a warning — the per-test LOAD vgi; (the .test files load it
 # explicitly) is what actually gates each file, and it needs vgi already
-# INSTALLed into the runner's extension dir.
+# INSTALLed into the runner's extension dir. haybarn-unittest 2.0 isolates
+# $HOME by default, so every invocation passes --keep-home: without it the
+# INSTALL lands in a throwaway home and each `LOAD vgi;` reports "not found".
 echo "Warming the extension cache (vgi from community) ..."
 mkdir -p "$STAGE/test"
 cat > "$STAGE/test/_warm.test" <<'EOF'
@@ -243,7 +245,7 @@ cat > "$STAGE/test/_warm.test" <<'EOF'
 statement ok
 INSTALL vgi FROM community;
 EOF
-"$HAYBARN_UNITTEST" "test/_warm.test" >/dev/null 2>&1 || echo "::warning::extension warm step did not fully succeed"
+"$HAYBARN_UNITTEST" --keep-home "test/_warm.test" >/dev/null 2>&1 || echo "::warning::extension warm step did not fully succeed"
 rm -f "$STAGE/test/_warm.test"
 
 # Run the whole suite in one invocation, capturing the runner's native
@@ -258,7 +260,7 @@ rm -f "$STAGE/test/_warm.test"
 echo "Running suite (transport: $TRANSPORT, worker: $VGI_FEED_WORKER, pattern: $TEST_PATTERN) ..."
 RUN_LOG="$STAGE/run.log"
 set +e
-"$HAYBARN_UNITTEST" "$TEST_PATTERN" 2>&1 | tee "$RUN_LOG"
+"$HAYBARN_UNITTEST" --keep-home "$TEST_PATTERN" 2>&1 | tee "$RUN_LOG"
 RUN_RC="${PIPESTATUS[0]}"
 set -e
 

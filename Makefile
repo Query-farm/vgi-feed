@@ -13,7 +13,7 @@
 #   make clean       Remove built binaries
 #
 # test-sql needs haybarn-unittest on PATH:
-#   uv tool install 'haybarn-unittest<2'
+#   uv tool install --prerelease allow 'haybarn-unittest>=2.0.0rc11,<2.1'
 #   export PATH="$$HOME/.local/bin:$$PATH"
 
 WORKER_BIN  := vgi-feed-worker
@@ -60,7 +60,7 @@ test-sql: build
 	set +e; \
 	VGI_FEED_WORKER="$(WORKER_PATH)" \
 	VGI_FEED_TEST_URL="http://127.0.0.1:$$PORT" \
-		haybarn-unittest --test-dir "$(TEST_DIR)" "$(TEST_PATTERN)"; \
+		haybarn-unittest --keep-home --test-dir "$(TEST_DIR)" "$(TEST_PATTERN)"; \
 	STATUS=$$?; \
 	exit $$STATUS
 
