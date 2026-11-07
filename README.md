@@ -22,8 +22,7 @@ by [`gofeed`](https://github.com/mmcdole/gofeed).
 ```sql
 INSTALL vgi FROM community; LOAD vgi;
 
--- LOCATION is the path to the compiled worker binary.
-ATTACH 'feed' AS feed (TYPE vgi, LOCATION '/path/to/vgi-feed-worker');
+ATTACH 'feed' AS feed (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-feed@v0.2.1');
 
 -- One row per feed item (input is a URL → fetched over HTTP).
 SELECT seq, title, link, published, author, categories
@@ -44,6 +43,39 @@ SELECT * FROM feed.feed_items('https://example.com/feed.xml',
 SELECT title, UNNEST(categories) AS category
 FROM feed.feed_items('https://example.com/feed.xml');
 ```
+
+## Quick start
+
+Every [GitHub release](https://github.com/Query-farm/vgi-feed/releases) ships a prebuilt worker binary. The `vgi` extension downloads the one for your platform, checks its SHA-256 and caches it, so there is nothing to install besides DuckDB:
+
+```sql
+INSTALL vgi FROM community;
+LOAD vgi;
+
+ATTACH 'feed' AS feed (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-feed@v0.2.1');
+
+-- List the items parsed from an inline RSS 2.0 feed, ordered by position.
+SELECT seq, title, link FROM feed.main.feed_items('<rss version="2.0"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>') ORDER BY seq;
+
+-- Count the items in an inline feed.
+SELECT count(*) AS items FROM feed.main.feed_items('<rss version="2.0"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>');
+```
+
+Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64) and Windows (x86-64). `github-auto://` needs an explicit release tag; change `@v0.2.1` to move to a newer release.
+
+### Other ways to run it
+
+- **Docker** (the image bundles the worker; needs a container runtime):
+
+  ```sql
+  ATTACH 'feed' AS feed (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-feed:0.2.1');
+  ```
+
+- **Manual download.** Download the archive for your platform from the [releases page](https://github.com/Query-farm/vgi-feed/releases), verify it against its `.sha256` file (a cosign `.cosign.bundle` is published alongside), unpack it, and set `LOCATION` to the path of the extracted worker executable.
+
+### Build from source
+
+To build the worker yourself, see [Building](#building).
 
 ## Functions
 
