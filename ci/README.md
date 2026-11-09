@@ -90,7 +90,7 @@ extension from the Haybarn community channel:
    spawn; `VGI_FEED_WORKER` (an absolute path) is the ATTACH `LOCATION`.
 2. **Download the runner** — the `haybarn_unittest-linux-amd64.zip` asset from
    the newest Haybarn **2.0** release (`haybarn-v2.0.*`; the worker speaks
-   `vgi.v3` / 3.1, which only Haybarn 2.0's community `vgi` extension accepts).
+   `vgi.v3` / 3.2, which only Haybarn 2.0's community `vgi` extension accepts).
    `gh release view` with no tag still returns the 1.5 line, so CI selects the
    newest `haybarn-v2.0` tag from `gh release list`.
 3. **Preprocess** — [`preprocess-require.awk`](preprocess-require.awk) rewrites

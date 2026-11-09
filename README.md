@@ -127,7 +127,7 @@ make test         # both
 ```
 
 `make test-sql` needs Haybarn 2.0's `haybarn-unittest` on `PATH` (the worker
-speaks VGI protocol `vgi.v3` / 3.1, which only Haybarn 2.0's `vgi` extension
+speaks VGI protocol `vgi.v3` / 3.2, which only Haybarn 2.0's `vgi` extension
 accepts):
 
 ```sh
