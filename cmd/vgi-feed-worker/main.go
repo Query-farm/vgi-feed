@@ -50,8 +50,9 @@ func main() {
 			SourceURL: &sourceURL,
 		}),
 		vgi.WithCatalogTags(map[string]string{
-			"source":    "vgi-feed",
-			"vgi.title": "RSS / Atom / JSON Feed Parser",
+			"source":       "vgi-feed",
+			"vgi.title":    "Feed Parser",
+			"vgi.subtitle": "Fetch and parse RSS, Atom, and JSON feeds into SQL rows, one per entry or one per feed.",
 			// VGI138: vgi.keywords must be a JSON array of strings, not a
 			// comma-separated string.
 			"vgi.keywords": `["feed","rss","atom","json feed","syndication","feed parser","news","blog","podcast","feed reader","rss reader","parse feed","feed items","feed metadata"]`,
