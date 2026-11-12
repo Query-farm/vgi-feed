@@ -22,7 +22,7 @@ by [`gofeed`](https://github.com/mmcdole/gofeed).
 ```sql
 INSTALL vgi FROM community; LOAD vgi;
 
-ATTACH 'feed' AS feed (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-feed@v0.3.0');
+ATTACH 'feed' AS feed (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-feed@v0.4.0');
 
 -- One row per feed item (input is a URL → fetched over HTTP).
 SELECT seq, title, link, published, author, categories
@@ -52,7 +52,7 @@ Every [GitHub release](https://github.com/Query-farm/vgi-feed/releases) ships a 
 INSTALL vgi FROM community;
 LOAD vgi;
 
-ATTACH 'feed' AS feed (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-feed@v0.3.0');
+ATTACH 'feed' AS feed (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-feed@v0.4.0');
 
 -- List the items parsed from an inline RSS 2.0 feed, ordered by position.
 SELECT seq, title, link FROM feed.main.feed_items('<rss version="2.0"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>') ORDER BY seq;
@@ -61,14 +61,14 @@ SELECT seq, title, link FROM feed.main.feed_items('<rss version="2.0"><channel><
 SELECT count(*) AS items FROM feed.main.feed_items('<rss version="2.0"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>');
 ```
 
-Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64) and Windows (x86-64). `github-auto://` needs an explicit release tag; change `@v0.3.0` to move to a newer release.
+Prebuilt binaries cover macOS (Apple silicon), Linux (x86-64 and arm64) and Windows (x86-64). `github-auto://` needs an explicit release tag; change `@v0.4.0` to move to a newer release.
 
 ### Other ways to run it
 
 - **Docker** (the image bundles the worker; needs a container runtime):
 
   ```sql
-  ATTACH 'feed' AS feed (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-feed:0.3.0');
+  ATTACH 'feed' AS feed (TYPE vgi, LOCATION 'docker://ghcr.io/query-farm/vgi-feed:0.4.0');
   ```
 
 - **Manual download.** Download the archive for your platform from the [releases page](https://github.com/Query-farm/vgi-feed/releases), verify it against its `.sha256` file (a cosign `.cosign.bundle` is published alongside), unpack it, and set `LOCATION` to the path of the extracted worker executable.
@@ -127,7 +127,7 @@ make test         # both
 ```
 
 `make test-sql` needs Haybarn 2.0's `haybarn-unittest` on `PATH` (the worker
-speaks VGI protocol `vgi.v3` / 3.2, which only Haybarn 2.0's `vgi` extension
+speaks VGI protocol `vgi.v3` / 3.3, which only Haybarn 2.0's `vgi` extension
 accepts):
 
 ```sh

@@ -120,20 +120,14 @@ func main() {
 				"topic":    "feed-syndication",
 				// VGI139: source_url belongs only on the catalog object (set via
 				// CatalogInfo.SourceURL); no per-schema source_url here.
-				"vgi.doc_llm": "Feed parsing table functions: feed_items returns one row " +
-					"per feed entry, and feed_info returns one row of feed-level metadata. Both " +
-					"accept an http(s) URL or a raw RSS/Atom/JSON feed document and auto-detect " +
-					"the feed format.",
+				"vgi.doc_llm": "Feed parsing: turn a syndication feed into SQL rows, either " +
+					"one row per entry or one row of feed-level metadata. Input is an http(s) " +
+					"URL or a raw RSS/Atom/JSON feed document; the format is auto-detected.",
 				"vgi.doc_md": "## Feed Parsing Functions\n\n" +
 					"Table functions for turning **RSS 2.0 / Atom / JSON Feed** documents into " +
 					"DuckDB rows over Apache Arrow.\n\n" +
-					"### Functions\n\n" +
-					"- **`feed_items(input [, timeout_ms, max_items])`** — one row per feed " +
-					"entry, with sequence, GUID, title, link, publish/update timestamps, " +
-					"author, categories array, summary, and content.\n" +
-					"- **`feed_info(input [, timeout_ms])`** — a single row of feed-level " +
-					"metadata: title, description, link, detected format, language, " +
-					"last-updated time, and item count.\n\n" +
+					"Reach for it to monitor news, blog, and podcast feeds, deduplicate " +
+					"entries by GUID, or catalog and health-check a set of feeds.\n\n" +
 					"### Usage\n\n" +
 					"`input` is either an `http(s)` URL (fetched over HTTP) or a raw feed " +
 					"document supplied inline; the format is auto-detected.\n\n" +
