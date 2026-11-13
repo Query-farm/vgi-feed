@@ -119,7 +119,7 @@ func fetchURL(ctx context.Context, rawURL string, timeout time.Duration) (string
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBodyBytes))
+	body, err := readFeedBytes(resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("feed: read response from %s: %w", rawURL, err)
 	}
@@ -127,6 +127,18 @@ func fetchURL(ctx context.Context, rawURL string, timeout time.Duration) (string
 		return "", fmt.Errorf("feed: %s returned HTTP %d: %s", rawURL, resp.StatusCode, snippet(string(body)))
 	}
 	return string(body), nil
+}
+
+// readFeedBytes rejects oversized documents instead of parsing a truncated feed.
+func readFeedBytes(r io.Reader) ([]byte, error) {
+	body, err := io.ReadAll(io.LimitReader(r, maxBodyBytes+1))
+	if err != nil {
+		return nil, err
+	}
+	if len(body) > maxBodyBytes {
+		return nil, fmt.Errorf("feed document exceeds the 64 MiB limit")
+	}
+	return body, nil
 }
 
 // snippet returns a short, single-line excerpt for error messages.

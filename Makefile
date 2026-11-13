@@ -46,9 +46,10 @@ test-unit:
 test-sql: build
 	@set -e; \
 	TMP_PORT_FILE=$$(mktemp); \
+	TMP_COPY_DIR=$$(mktemp -d); \
 	$(MOCK_PATH) --addr 127.0.0.1:0 >$$TMP_PORT_FILE 2>/dev/null & \
 	MOCK_PID=$$!; \
-	trap 'kill $$MOCK_PID 2>/dev/null; wait $$MOCK_PID 2>/dev/null; rm -f $$TMP_PORT_FILE' EXIT; \
+	trap 'kill $$MOCK_PID 2>/dev/null; wait $$MOCK_PID 2>/dev/null; rm -f $$TMP_PORT_FILE; rm -rf "$$TMP_COPY_DIR"' EXIT; \
 	PORT=""; \
 	for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do \
 		PORT=$$(sed -n 's/^PORT:\([0-9][0-9]*\)$$/\1/p' $$TMP_PORT_FILE 2>/dev/null | head -1); \
@@ -60,6 +61,7 @@ test-sql: build
 	set +e; \
 	VGI_FEED_WORKER="$(WORKER_PATH)" \
 	VGI_FEED_TEST_URL="http://127.0.0.1:$$PORT" \
+	VGI_FEED_COPY_DIR="$$TMP_COPY_DIR" \
 		haybarn-unittest --keep-home --test-dir "$(TEST_DIR)" "$(TEST_PATTERN)"; \
 	STATUS=$$?; \
 	exit $$STATUS

@@ -37,8 +37,8 @@ jobs:
 
   # Resolve the newest haybarn 2.0 release once, so the E2E job always tests the
   # current 2.0 build (and we never hardcode/pin an rc). The worker speaks VGI
-  # protocol vgi.v3 / 3.1, which only haybarn 2.0's community `vgi` extension
-  # accepts. `gh release view` with no tag still returns the 1.5 line, so pick
+  # protocol vgi.v3 / 3.3, which requires a compatible haybarn 2.0 `vgi` extension.
+  # `gh release view` with no tag still returns the 1.5 line, so pick
   # the newest haybarn-v2.0.* tag explicitly.
   resolve-haybarn:
     name: Resolve haybarn release

@@ -44,7 +44,7 @@ func main() {
 	sourceURL := "https://github.com/Query-farm/vgi-feed"
 	w := vgi.NewWorker(
 		vgi.WithCatalogName(feedworker.CatalogName),
-		vgi.WithCatalogComment("Fetch and parse RSS / Atom / JSON feeds into rows."),
+		vgi.WithCatalogComment("Fetch, query, import, and generate RSS / Atom / JSON feeds."),
 		vgi.WithCatalogInfo(vgi.CatalogInfo{
 			Name:      feedworker.CatalogName,
 			SourceURL: &sourceURL,
@@ -52,7 +52,7 @@ func main() {
 		vgi.WithCatalogTags(map[string]string{
 			"source":       "vgi-feed",
 			"vgi.title":    "Feed Parser",
-			"vgi.subtitle": "Fetch and parse RSS, Atom, and JSON feeds into SQL rows, one per entry or one per feed.",
+			"vgi.subtitle": "Fetch feeds into SQL rows and import or generate feed documents with COPY.",
 			// VGI138: vgi.keywords must be a JSON array of strings, not a
 			// comma-separated string.
 			"vgi.keywords": `["feed","rss","atom","json feed","syndication","feed parser","news","blog","podcast","feed reader","rss reader","parse feed","feed items","feed metadata"]`,
@@ -61,7 +61,9 @@ func main() {
 				"supplied inline; the format (RSS 2.0, Atom, or JSON Feed) is auto-detected. " +
 				"Use feed_items to get one row per entry (title, link, publish/update timestamps, " +
 				"author, categories, summary, content) and feed_info for feed-level metadata " +
-				"(title, type, language, item count). Use for syndication monitoring, ingesting " +
+				"(title, type, language, item count). COPY FROM with FORMAT 'feed.auto' imports " +
+				"URLs or worker-local files; COPY TO with FORMAT 'feed.rss', 'feed.atom', or " +
+				"'feed.jsonfeed' generates local feed documents. Use for syndication monitoring, ingesting " +
 				"news/blog/podcast feeds, and turning feeds into queryable tables.",
 			"vgi.doc_md": "# RSS, Atom & JSON Feed Parser for DuckDB\n\n" +
 				"Parse RSS, Atom, and JSON feeds directly in SQL — turn any syndication feed into " +
@@ -120,20 +122,25 @@ func main() {
 				"topic":    "feed-syndication",
 				// VGI139: source_url belongs only on the catalog object (set via
 				// CatalogInfo.SourceURL); no per-schema source_url here.
-				"vgi.doc_llm": "Feed parsing: turn a syndication feed into SQL rows, either " +
-					"one row per entry or one row of feed-level metadata. Input is an http(s) " +
-					"URL or a raw RSS/Atom/JSON feed document; the format is auto-detected.",
-				"vgi.doc_md": "## Feed Parsing Functions\n\n" +
-					"Table functions for turning **RSS 2.0 / Atom / JSON Feed** documents into " +
-					"DuckDB rows over Apache Arrow.\n\n" +
-					"Reach for it to monitor news, blog, and podcast feeds, deduplicate " +
-					"entries by GUID, or catalog and health-check a set of feeds.\n\n" +
-					"### Usage\n\n" +
-					"`input` is either an `http(s)` URL (fetched over HTTP) or a raw feed " +
-					"document supplied inline; the format is auto-detected.\n\n" +
-					"### Notes\n\n" +
-					"Missing/unparseable dates surface as `NULL` timestamps and absent " +
-					"text fields as empty strings; malformed feeds raise a clean error.",
+				"vgi.doc_llm": "Work with syndicated news, blogs, and other RSS, Atom, and JSON " +
+					"feeds as SQL rows. Fetch a feed URL or parse inline text to query entries " +
+					"and feed-level metadata. COPY imports URLs/files or generates feed documents " +
+					"from query results. Use this schema for feed ingestion and publishing.",
+				"vgi.doc_md": "## Syndicated feeds in SQL\n\n" +
+					"Turn **RSS 2.0, Atom, and JSON Feed** documents into queryable entries " +
+					"and feed-level metadata, or generate feed documents from SQL rows.\n\n" +
+					"### Ingestion\n\n" +
+					"Supply an `http(s)` feed URL or inline feed text; the format is detected " +
+					"automatically. COPY FROM can also read worker-local files. Entries carry " +
+					"identifiers, titles, links, dates, authors, categories, summaries, and content. " +
+					"Feed metadata describes the document as a whole.\n\n" +
+					"### Publishing\n\n" +
+					"COPY TO writes RSS, Atom, or JSON Feed from query results. Supply feed " +
+					"metadata as COPY options and use ORDER BY to choose entry order. " +
+					"File paths refer to the worker's filesystem.\n\n" +
+					"### Missing values\n\n" +
+					"Missing/unparseable dates surface as NULL timestamps, absent text as " +
+					"empty strings, and missing categories as empty lists. Malformed feeds raise errors.",
 				// VGI506/VGI515 representative example queries for the schema, as a
 				// JSON list of {description, sql} so each carries a human-readable
 				// description. Each parses an inline RSS document so it runs without

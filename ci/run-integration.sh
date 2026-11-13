@@ -64,6 +64,12 @@ esac
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO="$(cd "$HERE/.." && pwd)"
 STAGE="${STAGE:-$(mktemp -d)}"
+mkdir -p "$STAGE"
+STAGE="$(cd "$STAGE" && pwd)"
+# COPY paths are interpreted by the worker. Use one absolute directory shared
+# by the runner and out-of-band HTTP/unix workers, whose working dirs differ.
+export VGI_FEED_COPY_DIR="$STAGE/copy"
+mkdir -p "$VGI_FEED_COPY_DIR"
 
 # The worker binary the subprocess transport ATTACHes to is also the binary we
 # launch out-of-band for http/unix. Capture it before we possibly overwrite

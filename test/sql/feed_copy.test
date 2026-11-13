@@ -1,0 +1,208 @@
+# name: test/sql/feed_copy.test
+# description: COPY URLs and local feeds, generate RSS/Atom/JSON Feed, validate errors
+# group: [vgi_feed]
+
+require-env VGI_FEED_WORKER
+
+require-env VGI_FEED_TEST_URL
+
+require-env VGI_FEED_COPY_DIR
+
+statement ok
+LOAD vgi;
+
+statement ok
+INSTALL parquet;
+
+statement ok
+LOAD parquet;
+
+statement ok
+ATTACH 'feed' AS feed (TYPE vgi, LOCATION '{VGI_FEED_WORKER}');
+
+query TT rowsort
+SELECT DISTINCT format_name, direction FROM vgi_copy_formats() WHERE catalog_name = 'feed';
+----
+feed.atom	to
+feed.auto	from
+feed.jsonfeed	to
+feed.rss	to
+
+# Full typed schema, including timestamps and lists, from a URL.
+statement ok
+CREATE TABLE posts AS SELECT * FROM feed.feed_items(NULL);
+
+statement ok
+COPY posts FROM '{VGI_FEED_TEST_URL}/rss' (FORMAT 'feed.auto');
+
+query TTI
+SELECT title, categories[2], year(published) FROM posts WHERE seq = 0;
+----
+First RSS Post	tech	2006
+
+# Map a subset in target order; infer Atom and JSON Feed from the document.
+statement ok
+CREATE TABLE titles (link VARCHAR, title VARCHAR);
+
+statement ok
+COPY titles FROM '{VGI_FEED_TEST_URL}/atom' (FORMAT 'feed.auto', max_items 1);
+
+statement ok
+COPY titles FROM '{VGI_FEED_TEST_URL}/json' (FORMAT 'feed.auto', max_items 1);
+
+query TT rowsort
+SELECT * FROM titles;
+----
+https://example.com/atom/1	First Atom Entry
+https://example.com/json/1	First JSON Item
+
+# An explicit destination column list leaves other columns at their defaults.
+statement ok
+CREATE TABLE selected_columns (title VARCHAR, imported BOOLEAN DEFAULT true);
+
+statement ok
+COPY selected_columns (title) FROM '{VGI_FEED_TEST_URL}/rss' (FORMAT 'feed.auto');
+
+query II
+SELECT count(*), count(*) FILTER (WHERE imported) FROM selected_columns;
+----
+2	2
+
+# Generate all three formats and read them back from local files.
+statement ok
+COPY (SELECT * FROM posts ORDER BY seq) TO '{VGI_FEED_COPY_DIR}/feed-copy.xml'
+(FORMAT 'feed.rss', title 'Exported feed', link 'https://example.com', description 'A test feed');
+
+statement ok
+COPY (SELECT * FROM posts ORDER BY seq) TO '{VGI_FEED_COPY_DIR}/feed-copy.atom'
+(FORMAT 'feed.atom', title 'Exported feed', link 'https://example.com');
+
+statement ok
+COPY (SELECT * FROM posts ORDER BY seq) TO '{VGI_FEED_COPY_DIR}/feed-copy.json'
+(FORMAT 'feed.jsonfeed', title 'Exported feed', link 'https://example.com');
+
+statement ok
+CREATE TABLE imported AS SELECT * FROM posts WHERE false;
+
+statement ok
+COPY imported FROM '{VGI_FEED_COPY_DIR}/feed-copy.xml' (FORMAT 'feed.auto');
+
+statement ok
+COPY imported FROM '{VGI_FEED_COPY_DIR}/feed-copy.atom' (FORMAT 'feed.auto');
+
+statement ok
+COPY imported FROM '{VGI_FEED_COPY_DIR}/feed-copy.json' (FORMAT 'feed.auto');
+
+query II
+SELECT count(*), count(DISTINCT title) FROM imported;
+----
+6	2
+
+query II
+SELECT count(*), count(*) FILTER (WHERE categories = ['news','tech'] AND year(published) = 2006)
+FROM imported WHERE seq = 0;
+----
+3	3
+
+# Ordinary DuckDB COPY can export the results of a URL query as Parquet.
+statement ok
+COPY (SELECT * FROM feed.feed_items('{VGI_FEED_TEST_URL}/rss')) TO '{VGI_FEED_COPY_DIR}/feed-copy.parquet' (FORMAT parquet);
+
+query I
+SELECT count(*) FROM read_parquet('{VGI_FEED_COPY_DIR}/feed-copy.parquet');
+----
+2
+
+# More than 1,000 items and multiple sink batches: no default import cap, no
+# duplication across HTTP continuations, and preserve the requested order.
+statement ok
+COPY (SELECT i AS seq, 'Post ' || i AS title FROM range(5000) t(i) ORDER BY i DESC)
+TO '{VGI_FEED_COPY_DIR}/feed-copy-many.json' (FORMAT 'feed.jsonfeed', title 'Many', link 'https://example.com');
+
+statement ok
+CREATE TABLE many (seq BIGINT, title VARCHAR);
+
+statement ok
+COPY many FROM '{VGI_FEED_COPY_DIR}/feed-copy-many.json' (FORMAT 'feed.auto');
+
+query III
+SELECT count(*), count(DISTINCT seq), count(DISTINCT title) FROM many;
+----
+5000	5000	5000
+
+query T
+SELECT title FROM many WHERE seq = 0;
+----
+Post 4999
+
+query T
+SELECT title FROM many WHERE seq = 4999;
+----
+Post 0
+
+# Empty exports still contain a valid feed document.
+statement ok
+COPY (SELECT * FROM posts WHERE false) TO '{VGI_FEED_COPY_DIR}/feed-copy-empty.json'
+(FORMAT 'feed.jsonfeed', title 'Empty', link 'https://example.com');
+
+statement ok
+CREATE TABLE empty_items (title VARCHAR);
+
+statement ok
+COPY empty_items FROM '{VGI_FEED_COPY_DIR}/feed-copy-empty.json' (FORMAT 'feed.auto');
+
+query I
+SELECT count(*) FROM empty_items;
+----
+0
+
+# Name/type errors and unsupported options fail clearly.
+statement ok
+CREATE TABLE bad_columns (unknown VARCHAR);
+
+statement error
+COPY bad_columns FROM '{VGI_FEED_TEST_URL}/rss' (FORMAT 'feed.auto');
+----
+unknown item column
+
+statement ok
+CREATE TABLE bad_types (title INTEGER);
+
+statement error
+COPY bad_types FROM '{VGI_FEED_TEST_URL}/rss' (FORMAT 'feed.auto');
+----
+expected utf8
+
+statement error
+COPY posts FROM '{VGI_FEED_TEST_URL}/rss' (FORMAT 'feed.auto', max_items -1);
+----
+max_items must be between
+
+statement error
+COPY posts FROM '{VGI_FEED_TEST_URL}/malformed' (FORMAT 'feed.auto');
+----
+parse failed
+
+statement error
+COPY posts TO '{VGI_FEED_COPY_DIR}/feed-copy-invalid.xml' (FORMAT 'feed.rss', title 'T', link 'https://example.com');
+----
+description is required
+
+# A failed write must preserve an existing destination.
+statement ok
+COPY (SELECT 'Original' AS title) TO '{VGI_FEED_COPY_DIR}/feed-copy-atomic.json'
+(FORMAT 'feed.jsonfeed', title 'T', link 'https://example.com');
+
+statement error
+COPY (SELECT '' AS title) TO '{VGI_FEED_COPY_DIR}/feed-copy-atomic.json'
+(FORMAT 'feed.jsonfeed', title 'T', link 'https://example.com');
+----
+needs title, summary, or content
+
+statement ok
+COPY empty_items FROM '{VGI_FEED_COPY_DIR}/feed-copy-atomic.json' (FORMAT 'feed.auto');
+
+query T
+SELECT title FROM empty_items;
+----
+Original

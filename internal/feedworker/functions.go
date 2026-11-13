@@ -339,8 +339,8 @@ type itemsState struct {
 // itemsExamples are feed_items' object-level examples. They are surfaced BOTH as
 // FunctionMetadata.Examples (the native duckdb_functions().examples carrier) and,
 // via exampleQueriesFromCatalog, as the vgi.example_queries tag so each example
-// keeps its description (VGI515). Every SQL parses inline RSS text, so it runs
-// with no network access.
+// keeps its description (VGI515). The executable test corpus remains offline;
+// discovery also includes an explicit HTTP URL example.
 var itemsExamples = []vgi.CatalogExample{
 	{
 		SQL:         "SELECT seq, title, link FROM feed.main.feed_items('" + SampleRSS + "') ORDER BY seq;",
@@ -349,6 +349,10 @@ var itemsExamples = []vgi.CatalogExample{
 	{
 		SQL:         "SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('" + SampleRSS + "', max_items := 20);",
 		Description: "Expand each item's categories into one row per (item, category), capped at 20 items.",
+	},
+	{
+		SQL:         "SELECT title, link, published FROM feed.main.feed_items('https://hnrss.org/frontpage', timeout_ms := 5000, max_items := 25) ORDER BY seq;",
+		Description: "Fetch a public RSS URL over HTTP and return its first 25 entries in feed order (requires network access).",
 	},
 }
 
@@ -420,21 +424,7 @@ func (f *ItemsFunction) Process(_ context.Context, _ *vgi.ProcessParams, state *
 	if done {
 		return out.Finish()
 	}
-	n := int64(len(it))
-	batch := array.NewRecordBatch(itemsSchema, []arrow.Array{
-		vgi.BuildInt64Array(n, func(i int64) int64 { return it[i].Seq }),
-		vgi.BuildStringArray(n, func(i int64) string { return it[i].GUID }),
-		vgi.BuildStringArray(n, func(i int64) string { return it[i].Title }),
-		vgi.BuildStringArray(n, func(i int64) string { return it[i].Link }),
-		buildTimestampArray(n, func(i int64) *time.Time { return it[i].Published }),
-		buildTimestampArray(n, func(i int64) *time.Time { return it[i].Updated }),
-		vgi.BuildStringArray(n, func(i int64) string { return it[i].Author }),
-		buildStringListArray(n, func(i int64) []string { return it[i].Categories }),
-		vgi.BuildStringArray(n, func(i int64) string { return it[i].Summary }),
-		vgi.BuildStringArray(n, func(i int64) string { return it[i].Content }),
-	}, n)
-	defer batch.Release()
-	return out.Emit(batch)
+	return out.Emit(itemsRecord(it, itemsSchema))
 }
 
 // NewItemsFunction builds the registerable table function.
@@ -469,8 +459,7 @@ type infoState struct {
 
 // infoExamples are feed_info's object-level examples, surfaced both as
 // FunctionMetadata.Examples and (via exampleQueriesFromCatalog) as the
-// vgi.example_queries tag so each keeps its description (VGI515). Both parse
-// inline RSS text and run with no network access.
+// vgi.example_queries tag so each keeps its description (VGI515).
 var infoExamples = []vgi.CatalogExample{
 	{
 		SQL:         "SELECT title, feed_type, language, item_count FROM feed.main.feed_info('" + SampleRSS + "');",
@@ -479,6 +468,10 @@ var infoExamples = []vgi.CatalogExample{
 	{
 		SQL:         "SELECT feed_type, item_count FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Example</title><item><title>Hi</title></item></channel></rss>');",
 		Description: "Parse feed-level metadata directly from a raw inline RSS document (no network access).",
+	},
+	{
+		SQL:         "SELECT title, feed_type, item_count FROM feed.main.feed_info('https://www.nasa.gov/feed/', timeout_ms := 5000);",
+		Description: "Fetch a public feed URL and inspect its metadata (requires network access).",
 	},
 }
 
@@ -572,5 +565,6 @@ func NewInfoFunction() vgi.TableFunction {
 func Register(w *vgi.Worker) {
 	w.RegisterTable(NewItemsFunction())
 	w.RegisterTable(NewInfoFunction())
+	registerCopyFormats(w)
 	RegisterRegistry(w)
 }

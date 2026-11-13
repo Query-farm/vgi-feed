@@ -21,6 +21,8 @@ internal/feedworker/
   client.go                   input resolution (URL-vs-raw) + bounded HTTP fetch + ParseFeed
   feed.go                     Item/Info structs + flatten (ItemsFrom / InfoFrom)
   functions.go                the two VGI table functions + Register(w)
+  copy.go                     COPY source/destination handling + schema mapping
+  encode.go                   RSS / Atom / JSON Feed document encoders
   *_test.go                   httptest unit/integration tests
 internal/mockfeed/server.go   in-memory feed handler (shared by tests + mockserver)
 test/sql/*.test               haybarn-unittest sqllogictest — authoritative E2E
@@ -150,6 +152,27 @@ Mirrors `vgi-scim`'s start/stop pattern:
    status is captured and returned, and a shell `trap` kills the mock server.
 
 `cmd/mockserver` and the Go tests share `internal/mockfeed.NewHandler`.
+
+## COPY formats
+
+`Register(w)` also registers `feed.auto` for COPY FROM (URL or worker-local file,
+auto-detected RSS/Atom/JSON Feed) and `feed.rss`, `feed.atom`, `feed.jsonfeed` for
+COPY TO. Names are scoped by the ATTACH alias. Readers and writers use distinct
+format names because the SDK rejects distinct handlers for the same format.
+
+COPY schemas are subsets of `feed_items`, matched by case-insensitive column
+name with exact Arrow types. Imports default to all items, error above one
+million unless an explicit cap is requested, and reject documents above 64 MiB.
+The COPY reader adapter accepts one batch and finishes the stream. Writers
+declare `SinkOrderDependent`, buffer IPC batches in execution-scoped storage,
+and encode/rename a temporary file in `Close`; do not put cross-phase state on
+the writer instance. COPY TO accepts worker-local paths only.
+
+`test/sql/feed_copy.test` covers URL imports, file round trips, 5,000 ordered
+items, NULL dates/lists, empty exports, and failures. `VGI_FEED_COPY_DIR` is an
+absolute scratch directory shared by the worker and test runner; the Makefile
+and CI script create it so HTTP/unix tests do not depend on working directories.
+The SDK now speaks protocol 3.3.0; use a matching Haybarn 2.0 VGI client.
 
 ## Test inventory
 

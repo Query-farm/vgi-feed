@@ -5,10 +5,10 @@
 #   docker run -i ... IMG stdio   -> stdio worker DuckDB spawns on-host
 # See docker-entrypoint.sh.
 #
-# Like vgi-units this worker is STATELESS: it fetches + parses RSS/Atom/JSON feeds
-# on demand (or parses an inline document), holding no on-disk state. So there is
-# no /data volume and no `farm.query.vgi.volumes` mount-discovery label — the
-# image is just the compiled Go binary + a tiny entrypoint.
+# Feed queries fetch documents on demand. COPY TO buffers rows in execution
+# storage and writes feed files on the worker's filesystem. Mount a writable
+# directory to retain exported files or make local feed files available to COPY
+# FROM. The image declares no default persistent volume.
 # syntax=docker/dockerfile:1
 
 # ---- build stage -----------------------------------------------------------
@@ -53,7 +53,7 @@ ARG SOURCE_URL=https://github.com/Query-farm/vgi-feed
 # lists the NETWORK transports this image serves (http only); stdio is a spawn
 # mode, not a network transport, so it is not listed.
 LABEL org.opencontainers.image.title="vgi-feed" \
-      org.opencontainers.image.description="Fetch and parse RSS / Atom / JSON feeds into DuckDB rows as a VGI worker (stdio + HTTP)" \
+      org.opencontainers.image.description="Query, import, and generate RSS / Atom / JSON feeds with DuckDB (stdio + HTTP)" \
       org.opencontainers.image.source="${SOURCE_URL}" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${GIT_COMMIT}" \
@@ -77,7 +77,7 @@ RUN apt-get update \
 COPY --from=build --chmod=0755 /worker /usr/local/bin/vgi-feed-worker
 COPY --chmod=0755 docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-# Run unprivileged. No state, no volume — there is nothing to own or persist.
+# Run unprivileged. Mounted COPY destinations must be writable by UID 10001.
 RUN useradd --create-home --uid 10001 app
 USER app
 
