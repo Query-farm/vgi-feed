@@ -193,9 +193,10 @@ const SampleNotesAtom = `<feed xmlns="http://www.w3.org/2005/Atom"><title>Farm N
 // be able to satisfy using this worker. Only name + prompt are published
 // (VGI416): each task's grader reference SQL lives in the private repo-root
 // sidecar vgi-agent-tests.yaml, keyed by task name, which vgi-lint discovers on
-// its own. Every task operates on the inline SampleRSS document, so `vgi-lint
+// its own. Every task operates on inline feed documents (SampleRSS,
+// SampleMirrorJSON, SampleNotesAtom) or the built-in registry, so `vgi-lint
 // simulate` can execute them deterministically with NO network access. Keep the
-// sidecar in sync when a prompt or SampleRSS changes.
+// sidecar in sync when a prompt or one of those documents changes.
 var AgentTestTasks = buildAgentTestTasks()
 
 func buildAgentTestTasks() string {
