@@ -1,0 +1,527 @@
+{
+  "schema_version": 1,
+  "status": "met",
+  "meets_target": true,
+  "catalogs": {
+    "released": {
+      "catalog_status": "verified",
+      "revision": "v0.5.0",
+      "catalog_sha256": "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33",
+      "collection_reconciled": true,
+      "denominator": 7,
+      "observed_objects": 7,
+      "required": 7,
+      "verified_count": 7,
+      "candidate_count": 0,
+      "fraction": 1.0,
+      "meets_target": true,
+      "exact_runtime_count": 7,
+      "runtime_revisions": [
+        "v0.5.0"
+      ],
+      "covered": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_info"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_items"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_registry"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "read_feed_copy"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_atom_copy"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_jsonfeed_copy"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_rss_copy"
+        }
+      ],
+      "uncovered": [],
+      "objects": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_info",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "feed_info(VARCHAR, BIGINT) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_items",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "feed_items(VARCHAR, BIGINT, BIGINT) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_registry",
+          "kinds": [
+            "table"
+          ],
+          "signatures": [
+            "VIEW"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "read_feed_copy",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "read_feed_copy(BIGINT, BIGINT) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_atom_copy",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "write_atom_copy(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "write"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_jsonfeed_copy",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "write_jsonfeed_copy(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "write"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_rss_copy",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "write_rss_copy(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "write"
+          ],
+          "authentication": [
+            "none"
+          ]
+        }
+      ],
+      "issues": []
+    },
+    "current": {
+      "catalog_status": "verified",
+      "revision": "21c235e6c8fd86cdcf806e7d10863f9b35279093",
+      "catalog_sha256": "3e1973a6e348e2ac12358d6d05db8eb4db08e7bc3f04f362989316f8c12fd7ba",
+      "collection_reconciled": false,
+      "denominator": 7,
+      "observed_objects": 7,
+      "required": 7,
+      "verified_count": 7,
+      "candidate_count": 0,
+      "fraction": 1.0,
+      "meets_target": true,
+      "exact_runtime_count": 0,
+      "runtime_revisions": [
+        "v0.5.0"
+      ],
+      "covered": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_info"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_items"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_registry"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "read_feed_copy"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_atom_copy"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_jsonfeed_copy"
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_rss_copy"
+        }
+      ],
+      "uncovered": [],
+      "objects": [
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_info",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "feed_info(VARCHAR, BIGINT) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_items",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "feed_items(VARCHAR, BIGINT, BIGINT) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "feed_registry",
+          "kinds": [
+            "table"
+          ],
+          "signatures": [
+            "VIEW"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "read_feed_copy",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "read_feed_copy(BIGINT, BIGINT) -> None"
+          ],
+          "access": [
+            "read"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_atom_copy",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "write_atom_copy(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "write"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_jsonfeed_copy",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "write_jsonfeed_copy(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "write"
+          ],
+          "authentication": [
+            "none"
+          ]
+        },
+        {
+          "schema": [
+            "main"
+          ],
+          "name": "write_rss_copy",
+          "kinds": [
+            "function"
+          ],
+          "signatures": [
+            "write_rss_copy(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) -> None"
+          ],
+          "access": [
+            "write"
+          ],
+          "authentication": [
+            "none"
+          ]
+        }
+      ],
+      "issues": []
+    }
+  },
+  "interface_drift": {
+    "known": true,
+    "current_only": [],
+    "released_only": [],
+    "changed": []
+  },
+  "notebooks": {
+    "01_measure_feed_prefix_coverage.ipynb": {
+      "verified": true,
+      "issues": []
+    },
+    "02_export_order_is_not_identity.ipynb": {
+      "verified": true,
+      "issues": []
+    }
+  },
+  "examples": [
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "feed_registry"
+      },
+      "notebook": "01_measure_feed_prefix_coverage.ipynb",
+      "runtime_revision": "v0.5.0",
+      "runtime_catalog_sha256": "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "feed_info"
+      },
+      "notebook": "01_measure_feed_prefix_coverage.ipynb",
+      "runtime_revision": "v0.5.0",
+      "runtime_catalog_sha256": "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "feed_items"
+      },
+      "notebook": "01_measure_feed_prefix_coverage.ipynb",
+      "runtime_revision": "v0.5.0",
+      "runtime_catalog_sha256": "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "read_feed_copy"
+      },
+      "notebook": "02_export_order_is_not_identity.ipynb",
+      "runtime_revision": "v0.5.0",
+      "runtime_catalog_sha256": "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "write_rss_copy"
+      },
+      "notebook": "02_export_order_is_not_identity.ipynb",
+      "runtime_revision": "v0.5.0",
+      "runtime_catalog_sha256": "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "write_atom_copy"
+      },
+      "notebook": "02_export_order_is_not_identity.ipynb",
+      "runtime_revision": "v0.5.0",
+      "runtime_catalog_sha256": "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33"
+    },
+    {
+      "status": "verified",
+      "issues": [],
+      "verified_catalogs": [
+        "released",
+        "current"
+      ],
+      "object": {
+        "schema": [
+          "main"
+        ],
+        "name": "write_jsonfeed_copy"
+      },
+      "notebook": "02_export_order_is_not_identity.ipynb",
+      "runtime_revision": "v0.5.0",
+      "runtime_catalog_sha256": "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33"
+    }
+  ],
+  "issues": []
+}

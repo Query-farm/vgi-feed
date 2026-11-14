@@ -1,0 +1,295 @@
+{
+  "query": "SELECT * FROM duckdb_functions() WHERE database_name='feed' ORDER BY schema_name,function_name",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "function_name",
+    "alias_of",
+    "function_type",
+    "description",
+    "comment",
+    "tags",
+    "return_type",
+    "parameters",
+    "parameter_types",
+    "varargs",
+    "macro_definition",
+    "has_side_effects",
+    "internal",
+    "extension_name",
+    "function_oid",
+    "examples",
+    "stability",
+    "categories"
+  ],
+  "rows": [
+    [
+      "feed",
+      "22600",
+      "main",
+      "feed_info",
+      null,
+      "table",
+      "Return feed-level metadata (title, type, language, item count) for an RSS/Atom/JSON feed",
+      null,
+      {
+        "vgi.category": "Feed Metadata",
+        "vgi.doc_llm": "Return one row of feed-level metadata for an RSS 2.0, Atom, or JSON Feed: the feed title, description/subtitle, home link, detected format (rss/atom/json), language, last-updated timestamp, and item count. The input is either an http(s) URL (fetched over HTTP) or a raw feed document supplied inline; the format is auto-detected. Use it to inspect or classify a feed without expanding every entry.",
+        "vgi.doc_md": "Return **feed-level metadata** (title, type, language, item count) for an RSS/Atom/JSON feed as a single row.",
+        "vgi.example_queries": "[{\"description\":\"Inspect an inline feed's title, detected format, language, and item count (no network access).\",\"sql\":\"SELECT title, feed_type, language, item_count FROM feed.main.feed_info('\\u003crss version=\\\"2.0\\\"\\u003e\\u003cchannel\\u003e\\u003ctitle\\u003eQuery Farm Sample Feed\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/\\u003c/link\\u003e\\u003cdescription\\u003eA small RSS feed used by vgi-feed examples\\u003c/description\\u003e\\u003clanguage\\u003een-us\\u003c/language\\u003e\\u003citem\\u003e\\u003ctitle\\u003eFirst Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/first\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003ccategory\\u003erelease\\u003c/category\\u003e\\u003cdescription\\u003eThe first sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003citem\\u003e\\u003ctitle\\u003eSecond Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/second\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003cdescription\\u003eThe second sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003c/channel\\u003e\\u003c/rss\\u003e');\"},{\"description\":\"Parse feed-level metadata directly from a raw inline RSS document (no network access).\",\"sql\":\"SELECT feed_type, item_count FROM feed.main.feed_info('\\u003crss version=\\\"2.0\\\"\\u003e\\u003cchannel\\u003e\\u003ctitle\\u003eExample\\u003c/title\\u003e\\u003citem\\u003e\\u003ctitle\\u003eHi\\u003c/title\\u003e\\u003c/item\\u003e\\u003c/channel\\u003e\\u003c/rss\\u003e');\"},{\"description\":\"Fetch a public feed URL and inspect its metadata (requires network access).\",\"sql\":\"SELECT title, feed_type, item_count FROM feed.main.feed_info('https://www.nasa.gov/feed/', timeout_ms := 5000);\"}]",
+        "vgi.keywords": "[\"feed\",\"rss\",\"atom\",\"json feed\",\"syndication\",\"feed info\",\"feed metadata\",\"feed type\",\"feed title\",\"language\",\"item count\",\"detect feed format\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"title\",\"type\":\"VARCHAR\",\"description\":\"Feed title (empty string when absent).\"},{\"name\":\"description\",\"type\":\"VARCHAR\",\"description\":\"Feed description / subtitle (empty string when absent).\"},{\"name\":\"link\",\"type\":\"VARCHAR\",\"description\":\"Feed home / site URL (empty string when absent).\"},{\"name\":\"feed_type\",\"type\":\"VARCHAR\",\"description\":\"Detected feed format: rss, atom, or json.\"},{\"name\":\"language\",\"type\":\"VARCHAR\",\"description\":\"Feed language code such as en-us (empty string when absent).\"},{\"name\":\"updated\",\"type\":\"TIMESTAMP\",\"description\":\"Feed last-updated time in UTC; NULL when absent or unparseable.\"},{\"name\":\"item_count\",\"type\":\"INTEGER\",\"description\":\"Number of items present in the feed.\"}]",
+        "vgi.title": "Feed Metadata Summary"
+      },
+      null,
+      [
+        "input",
+        "timeout_ms"
+      ],
+      [
+        "VARCHAR",
+        "BIGINT"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22604,
+      [
+        "SELECT title, feed_type, language, item_count FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>');",
+        "SELECT feed_type, item_count FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Example</title><item><title>Hi</title></item></channel></rss>');",
+        "SELECT title, feed_type, item_count FROM feed.main.feed_info('https://www.nasa.gov/feed/', timeout_ms := 5000);"
+      ],
+      null,
+      [
+        "feed",
+        "rss",
+        "atom"
+      ]
+    ],
+    [
+      "feed",
+      "22600",
+      "main",
+      "feed_items",
+      null,
+      "table",
+      "Parse an RSS/Atom/JSON feed (URL or raw text) into one row per item",
+      null,
+      {
+        "vgi.category": "Feed Items",
+        "vgi.doc_llm": "Parse an RSS 2.0, Atom, or JSON Feed into one row per entry. The input is either an http(s) URL (fetched over HTTP) or a raw feed document supplied inline; the format is auto-detected. Each row carries the item's sequence, GUID, title, link, publish and update timestamps, author, categories array, summary, and full content. Use it to ingest news/blog/podcast feeds and turn syndicated entries into a queryable table.",
+        "vgi.doc_md": "Parse an RSS/Atom/JSON feed (URL or raw text) into **one row per item** \u2014 `seq`, `guid`, `title`, `link`, `published`, `updated`, `author`, `categories`, `summary`, `content`.",
+        "vgi.example_queries": "[{\"description\":\"List items parsed directly from an inline RSS 2.0 document (no network access).\",\"sql\":\"SELECT seq, title, link FROM feed.main.feed_items('\\u003crss version=\\\"2.0\\\"\\u003e\\u003cchannel\\u003e\\u003ctitle\\u003eQuery Farm Sample Feed\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/\\u003c/link\\u003e\\u003cdescription\\u003eA small RSS feed used by vgi-feed examples\\u003c/description\\u003e\\u003clanguage\\u003een-us\\u003c/language\\u003e\\u003citem\\u003e\\u003ctitle\\u003eFirst Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/first\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003ccategory\\u003erelease\\u003c/category\\u003e\\u003cdescription\\u003eThe first sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003citem\\u003e\\u003ctitle\\u003eSecond Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/second\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003cdescription\\u003eThe second sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003c/channel\\u003e\\u003c/rss\\u003e') ORDER BY seq;\"},{\"description\":\"Expand each item's categories into one row per (item, category), capped at 20 items.\",\"sql\":\"SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('\\u003crss version=\\\"2.0\\\"\\u003e\\u003cchannel\\u003e\\u003ctitle\\u003eQuery Farm Sample Feed\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/\\u003c/link\\u003e\\u003cdescription\\u003eA small RSS feed used by vgi-feed examples\\u003c/description\\u003e\\u003clanguage\\u003een-us\\u003c/language\\u003e\\u003citem\\u003e\\u003ctitle\\u003eFirst Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/first\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003ccategory\\u003erelease\\u003c/category\\u003e\\u003cdescription\\u003eThe first sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003citem\\u003e\\u003ctitle\\u003eSecond Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/second\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003cdescription\\u003eThe second sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003c/channel\\u003e\\u003c/rss\\u003e', max_items := 20);\"},{\"description\":\"Fetch a public RSS URL over HTTP and return its first 25 entries in feed order (requires network access).\",\"sql\":\"SELECT title, link, published FROM feed.main.feed_items('https://hnrss.org/frontpage', timeout_ms := 5000, max_items := 25) ORDER BY seq;\"}]",
+        "vgi.executable_examples": "[{\"description\":\"List the items parsed from an inline RSS 2.0 feed, ordered by position.\",\"sql\":\"SELECT seq, title, link FROM feed.main.feed_items('\\u003crss version=\\\"2.0\\\"\\u003e\\u003cchannel\\u003e\\u003ctitle\\u003eQuery Farm Sample Feed\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/\\u003c/link\\u003e\\u003cdescription\\u003eA small RSS feed used by vgi-feed examples\\u003c/description\\u003e\\u003clanguage\\u003een-us\\u003c/language\\u003e\\u003citem\\u003e\\u003ctitle\\u003eFirst Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/first\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003ccategory\\u003erelease\\u003c/category\\u003e\\u003cdescription\\u003eThe first sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003citem\\u003e\\u003ctitle\\u003eSecond Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/second\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003cdescription\\u003eThe second sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003c/channel\\u003e\\u003c/rss\\u003e') ORDER BY seq\"},{\"description\":\"Expand each item's categories into one row per (item, category).\",\"sql\":\"SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('\\u003crss version=\\\"2.0\\\"\\u003e\\u003cchannel\\u003e\\u003ctitle\\u003eQuery Farm Sample Feed\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/\\u003c/link\\u003e\\u003cdescription\\u003eA small RSS feed used by vgi-feed examples\\u003c/description\\u003e\\u003clanguage\\u003een-us\\u003c/language\\u003e\\u003citem\\u003e\\u003ctitle\\u003eFirst Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/first\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003ccategory\\u003erelease\\u003c/category\\u003e\\u003cdescription\\u003eThe first sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003citem\\u003e\\u003ctitle\\u003eSecond Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/second\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003cdescription\\u003eThe second sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003c/channel\\u003e\\u003c/rss\\u003e') ORDER BY seq\"},{\"description\":\"Read feed-level metadata: title, detected format, language, and item count.\",\"sql\":\"SELECT title, feed_type, language, item_count FROM feed.main.feed_info('\\u003crss version=\\\"2.0\\\"\\u003e\\u003cchannel\\u003e\\u003ctitle\\u003eQuery Farm Sample Feed\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/\\u003c/link\\u003e\\u003cdescription\\u003eA small RSS feed used by vgi-feed examples\\u003c/description\\u003e\\u003clanguage\\u003een-us\\u003c/language\\u003e\\u003citem\\u003e\\u003ctitle\\u003eFirst Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/first\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003ccategory\\u003erelease\\u003c/category\\u003e\\u003cdescription\\u003eThe first sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003citem\\u003e\\u003ctitle\\u003eSecond Post\\u003c/title\\u003e\\u003clink\\u003ehttps://query.farm/second\\u003c/link\\u003e\\u003ccategory\\u003enews\\u003c/category\\u003e\\u003cdescription\\u003eThe second sample entry\\u003c/description\\u003e\\u003c/item\\u003e\\u003c/channel\\u003e\\u003c/rss\\u003e')\"}]",
+        "vgi.keywords": "[\"feed\",\"rss\",\"atom\",\"json feed\",\"syndication\",\"items\",\"entries\",\"parse feed\",\"feed items\",\"news\",\"blog\",\"podcast\",\"rss reader\",\"feed reader\"]",
+        "vgi.result_columns_schema": "[{\"name\":\"seq\",\"type\":\"BIGINT\",\"description\":\"0-based position of the item within the feed.\"},{\"name\":\"guid\",\"type\":\"VARCHAR\",\"description\":\"Item GUID / id (empty string when the feed omits one).\"},{\"name\":\"title\",\"type\":\"VARCHAR\",\"description\":\"Item title (empty string when absent).\"},{\"name\":\"link\",\"type\":\"VARCHAR\",\"description\":\"Item link / permalink URL (empty string when absent).\"},{\"name\":\"published\",\"type\":\"TIMESTAMP\",\"description\":\"Publish time in UTC; NULL when absent or unparseable.\"},{\"name\":\"updated\",\"type\":\"TIMESTAMP\",\"description\":\"Last-updated time in UTC; NULL when absent or unparseable.\"},{\"name\":\"author\",\"type\":\"VARCHAR\",\"description\":\"Author display name or email (empty string when absent).\"},{\"name\":\"categories\",\"type\":\"VARCHAR[]\",\"description\":\"Item categories / tags as a list (empty list when none).\"},{\"name\":\"summary\",\"type\":\"VARCHAR\",\"description\":\"Item summary / description (empty string when absent).\"},{\"name\":\"content\",\"type\":\"VARCHAR\",\"description\":\"Full item content (empty string when not provided).\"}]",
+        "vgi.title": "Feed Items To Rows"
+      },
+      null,
+      [
+        "input",
+        "max_items",
+        "timeout_ms"
+      ],
+      [
+        "VARCHAR",
+        "BIGINT",
+        "BIGINT"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22605,
+      [
+        "SELECT seq, title, link FROM feed.main.feed_items('<rss version=\"2.0\"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>') ORDER BY seq;",
+        "SELECT title, UNNEST(categories) AS category FROM feed.main.feed_items('<rss version=\"2.0\"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>', max_items := 20);",
+        "SELECT title, link, published FROM feed.main.feed_items('https://hnrss.org/frontpage', timeout_ms := 5000, max_items := 25) ORDER BY seq;"
+      ],
+      null,
+      [
+        "feed",
+        "rss",
+        "atom"
+      ]
+    ],
+    [
+      "feed",
+      "22600",
+      "main",
+      "read_feed_copy",
+      null,
+      "table",
+      "Import RSS, Atom, or JSON Feed items from a URL or file using COPY FROM",
+      null,
+      {
+        "vgi.category": "Feed Items",
+        "vgi.doc_llm": "Import auto feed items using COPY FROM an HTTP(S) URL or worker-local file. Target columns must be a subset of feed_items columns with matching names and types. timeout_ms defaults to 15000; max_items defaults to 0 (all items). Documents over 64 MiB or over one million items are rejected.",
+        "vgi.doc_md": "## Import feed items\n\nImport auto feed items using COPY FROM an HTTP(S) URL or worker-local file. Target columns must be a subset of feed_items columns with matching names and types. timeout_ms defaults to 15000; max_items defaults to 0 (all items). Documents over 64 MiB or over one million items are rejected.\n\n### Column mapping\n\nThe destination table chooses the output schema. Use any subset of the item columns, in any order, with matching types. Dates are plain `TIMESTAMP`; categories are `VARCHAR[]`. Unknown columns and incompatible types are errors.\n\n### Example\n\n```sql\nCREATE TABLE headlines (title VARCHAR, link VARCHAR);\nCOPY headlines FROM 'https://hnrss.org/frontpage' (FORMAT 'feed.auto', timeout_ms 5000);\n```\n\nLocal file paths refer to the worker's filesystem, including for remote workers.",
+        "vgi.keywords": "[\"feed\",\"copy\",\"import\",\"export\",\"auto\"]",
+        "vgi.result_dynamic_columns_md": "The COPY destination selects any subset and order of these columns.\n\n| Name | Type | Description |\n| --- | --- | --- |\n| seq | BIGINT | Zero-based position in the feed. |\n| guid | VARCHAR | Item ID, or empty when absent. |\n| title | VARCHAR | Item title. |\n| link | VARCHAR | Item URL. |\n| published | TIMESTAMP | Publish time in UTC; NULL when unavailable. |\n| updated | TIMESTAMP | Update time in UTC; NULL when unavailable. |\n| author | VARCHAR | Author name or email. |\n| categories | VARCHAR[] | Category names; empty list when absent. |\n| summary | VARCHAR | Item summary. |\n| content | VARCHAR | Full item content. |",
+        "vgi.title": "COPY auto feed"
+      },
+      null,
+      [
+        "max_items",
+        "timeout_ms"
+      ],
+      [
+        "BIGINT",
+        "BIGINT"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22606,
+      [],
+      null,
+      [
+        "feed",
+        "copy"
+      ]
+    ],
+    [
+      "feed",
+      "22600",
+      "main",
+      "write_atom_copy",
+      null,
+      "table",
+      "Export SQL rows to a atom feed document using COPY TO",
+      null,
+      {
+        "vgi.category": "Feed Items",
+        "vgi.doc_llm": "Export atom using COPY TO a worker-local file. Source columns are matched by feed_items column names and types. title and link options are required; RSS also requires description. Optional language and author describe the feed. Use ORDER BY to choose item order. Missing item IDs are generated deterministically; Atom dates default to the export time.",
+        "vgi.doc_md": "## Generate a atom feed\n\nExport atom using COPY TO a worker-local file. Source columns are matched by feed_items column names and types. title and link options are required; RSS also requires description. Optional language and author describe the feed. Use ORDER BY to choose item order. Missing item IDs are generated deterministically; Atom dates default to the export time.\n\n### Input and output\n\nAlias and cast source columns to the item schema; subsets are supported. This is a sink with no result columns. DuckDB reports the COPY row count. Every item needs title, summary, or content; Atom requires a title. Empty input produces a valid empty feed.\n\n### Example\n\n```sql\nCOPY (SELECT 'First post' AS title, 'https://example.com/1' AS link)\nTO '/tmp/posts.feed' (FORMAT 'feed.atom', title 'Posts', link 'https://example.com', description 'Recent posts');\n```\n\n### Limits\n\nOnly worker-local destinations are supported. Buffered input and encoded output are limited to 64 MiB, and exports to one million items. The destination is replaced after successful encoding.",
+        "vgi.keywords": "[\"feed\",\"copy\",\"import\",\"export\",\"atom\"]",
+        "vgi.result_columns_schema": "[]",
+        "vgi.title": "COPY atom feed"
+      },
+      null,
+      [
+        "author",
+        "language",
+        "description",
+        "link",
+        "title"
+      ],
+      [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22607,
+      [],
+      null,
+      [
+        "feed",
+        "copy"
+      ]
+    ],
+    [
+      "feed",
+      "22600",
+      "main",
+      "write_jsonfeed_copy",
+      null,
+      "table",
+      "Export SQL rows to a jsonfeed feed document using COPY TO",
+      null,
+      {
+        "vgi.category": "Feed Items",
+        "vgi.doc_llm": "Export jsonfeed using COPY TO a worker-local file. Source columns are matched by feed_items column names and types. title and link options are required; RSS also requires description. Optional language and author describe the feed. Use ORDER BY to choose item order. Missing item IDs are generated deterministically; Atom dates default to the export time.",
+        "vgi.doc_md": "## Generate a jsonfeed feed\n\nExport jsonfeed using COPY TO a worker-local file. Source columns are matched by feed_items column names and types. title and link options are required; RSS also requires description. Optional language and author describe the feed. Use ORDER BY to choose item order. Missing item IDs are generated deterministically; Atom dates default to the export time.\n\n### Input and output\n\nAlias and cast source columns to the item schema; subsets are supported. This is a sink with no result columns. DuckDB reports the COPY row count. Every item needs title, summary, or content; Atom requires a title. Empty input produces a valid empty feed.\n\n### Example\n\n```sql\nCOPY (SELECT 'First post' AS title, 'https://example.com/1' AS link)\nTO '/tmp/posts.feed' (FORMAT 'feed.jsonfeed', title 'Posts', link 'https://example.com', description 'Recent posts');\n```\n\n### Limits\n\nOnly worker-local destinations are supported. Buffered input and encoded output are limited to 64 MiB, and exports to one million items. The destination is replaced after successful encoding.",
+        "vgi.keywords": "[\"feed\",\"copy\",\"import\",\"export\",\"jsonfeed\"]",
+        "vgi.result_columns_schema": "[]",
+        "vgi.title": "COPY jsonfeed feed"
+      },
+      null,
+      [
+        "author",
+        "language",
+        "description",
+        "link",
+        "title"
+      ],
+      [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22608,
+      [],
+      null,
+      [
+        "feed",
+        "copy"
+      ]
+    ],
+    [
+      "feed",
+      "22600",
+      "main",
+      "write_rss_copy",
+      null,
+      "table",
+      "Export SQL rows to a rss feed document using COPY TO",
+      null,
+      {
+        "vgi.category": "Feed Items",
+        "vgi.doc_llm": "Export rss using COPY TO a worker-local file. Source columns are matched by feed_items column names and types. title and link options are required; RSS also requires description. Optional language and author describe the feed. Use ORDER BY to choose item order. Missing item IDs are generated deterministically; Atom dates default to the export time.",
+        "vgi.doc_md": "## Generate a rss feed\n\nExport rss using COPY TO a worker-local file. Source columns are matched by feed_items column names and types. title and link options are required; RSS also requires description. Optional language and author describe the feed. Use ORDER BY to choose item order. Missing item IDs are generated deterministically; Atom dates default to the export time.\n\n### Input and output\n\nAlias and cast source columns to the item schema; subsets are supported. This is a sink with no result columns. DuckDB reports the COPY row count. Every item needs title, summary, or content; Atom requires a title. Empty input produces a valid empty feed.\n\n### Example\n\n```sql\nCOPY (SELECT 'First post' AS title, 'https://example.com/1' AS link)\nTO '/tmp/posts.feed' (FORMAT 'feed.rss', title 'Posts', link 'https://example.com', description 'Recent posts');\n```\n\n### Limits\n\nOnly worker-local destinations are supported. Buffered input and encoded output are limited to 64 MiB, and exports to one million items. The destination is replaced after successful encoding.",
+        "vgi.keywords": "[\"feed\",\"copy\",\"import\",\"export\",\"rss\"]",
+        "vgi.result_columns_schema": "[]",
+        "vgi.title": "COPY rss feed"
+      },
+      null,
+      [
+        "author",
+        "language",
+        "description",
+        "link",
+        "title"
+      ],
+      [
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR",
+        "VARCHAR"
+      ],
+      null,
+      null,
+      null,
+      true,
+      null,
+      22609,
+      [],
+      null,
+      [
+        "feed",
+        "copy"
+      ]
+    ]
+  ]
+}

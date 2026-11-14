@@ -1,60 +1,110 @@
-# Executed feed coverage walkthrough
+# Feed Parser examples
 
-[Does an item cap preserve recent entries?](01_measure_feed_prefix_coverage.ipynb) fetches explicitly synthetic RSS, Atom and JSON Feed documents through the real released Go worker, verifies common-field and HTTP/inline agreement, and measures the recent entries missed by a source-order cap. SQL owns parsing calls, time classification, joins and coverage arithmetic; Python serves fixture bytes and presents results.
+[Worker repository](https://github.com/Query-farm/vgi-feed) · [Shared notebook tools and standard](https://github.com/Query-farm/vgi-example-notebooks)
 
-## Install and run
+| Notebook | Investigation | Run |
+|---|---|---|
+| [Does an item cap preserve recent entries?](01_measure_feed_prefix_coverage.ipynb) | Fetch the same synthetic bulletin in three formats and measure the recent items omitted by a source-order cap. | [Open in Colab](https://colab.research.google.com/github/Query-farm/vgi-feed/blob/main/notebooks/01_measure_feed_prefix_coverage.ipynb) |
+| [Export order is not item identity](02_export_order_is_not_identity.ipynb) | Write RSS, Atom and JSON Feed, re-import each document, and distinguish stable IDs, regenerated positions and timestamp defaults. | [Open in Colab](https://colab.research.google.com/github/Query-farm/vgi-feed/blob/main/notebooks/02_export_order_is_not_identity.ipynb) |
 
-Requirements: [uv](https://docs.astral.sh/uv/), Python 3.13 or 3.14, and initial network access for dependencies and the released binary. No Go installation, worker checkout, service account or global kernel is required. Copy this entire directory to run independently.
+Both notebooks contain saved results, visible SQL connections, linked worker
+titles, Colab buttons and consistent Query Farm Strata Sun/VGI branding. Four SVG
+figures remain sharp on GitHub. GitHub displays code expanded; shared setup and
+small plotting helpers keep it concise. Editor hiding metadata is a convenience.
 
-```sh
-cd notebooks
-uv sync --frozen
-uv run --frozen python execute.py --timeout 180
-```
+## Run locally or in Colab
 
-The separate lock pins published Haybarn 2.0.0rc11. The runner creates a temporary kernel using its own interpreter and notebook-directory cwd. It saves atomically only after all cells succeed. Root Go dependencies and locks remain unchanged.
-
-For interactive editing:
-
-```sh
-uv run --frozen python -m ipykernel install --user --name vgi-feed-notebooks --display-name 'Python (feed notebooks)'
-```
-
-Select that kernel with cwd here, edit the visible parameter, restart and run all. Python support and plot cells are folded; connection and analytical SQL remain visible. Official branding is local and unchanged.
-
-## One-parameter experiment
-
-`MAX_ITEMS=4` accepts integers 1–10 and limits emitted entries in source order. Run a separate cap-8 copy:
+Open either Colab link and run all cells. Locally, run from this directory:
 
 ```sh
-uv run --frozen python execute.py --parameters '{"MAX_ITEMS":8}' --output-dir artifacts/cap-eight
+uv sync --locked
+uv run --locked vgi-notebooks --timeout 300
 ```
 
-Overrides require a separate destination; failures preserve the successful source notebook. The runner copies branding, fixtures, helpers, README and environment files beside experiment copies. Reset 4 for defaults. Logs, chart extracts, caches and experiment copies are ignored.
+Select `.venv/bin/python` for an interactive kernel. Standalone setup installs
+only the shared base package and preserves compatible existing kernel/plot
+packages. The local environment additionally includes the execution runner.
+The fixture server, presentation helper and authored documents are downloaded
+from an immutable public revision and SHA-256 checked. No worker checkout or
+copied execution/standard script is required.
 
-## Portable launch and synthetic provenance
+Each notebook shows the released worker connection:
 
 ```sql
-INSTALL vgi FROM community;
-LOAD vgi;
-ATTACH 'feed' (TYPE vgi, LOCATION 'github-auto://Query-farm/vgi-feed@v0.5.0');
+ATTACH 'feed' (TYPE vgi,
+ LOCATION 'github-auto://Query-farm/vgi-feed@v0.5.0');
 ```
 
-The extension resolves a pinned published platform asset and verifies its sidecar checksum. This location was executed through published Haybarn on macOS arm64. To upgrade, explicitly change the tag and rerun defaults, the experiment and checks. No local build substitutes for the published worker.
+The VGI extension downloads the platform's public prebuilt release, verifies its
+SHA-256 and caches it. Initial setup needs internet access. No Go compiler,
+source build, SDK overrides or API credentials are required. The notebooks run
+local computations and, in the first example, actual HTTP requests to a read-only
+loopback fixture server. They do not fetch publishers, article links or images.
 
-[Fixture notes](fixtures/README.md) describe ten fictional bulletin entries encoded in three formats with identical common fields and nonchronological order. A read-only loopback HTTP server exposes those documents to the worker; an exact nine-request audit checks one metadata, uncapped and capped call per format. Inline RSS parsing makes no HTTP request. The actual worker performs fetching, feed detection, date parsing and Arrow serialization. This is synthetic HTTP validation, not recorded or live publisher data. No publisher endpoint, entry link or external account is accessed by the analysis.
+## Input and result scope
 
-The fixed UTC window is [2026-01-13 12:00, 2026-01-15 12:00). Unknown timestamps are classified separately; the fixtures have none. One entry is exactly at the excluded anchor and one is later. The worker emits plain TIMESTAMP values, interpreted here as the authored UTC instants. Topic labels overlap and cannot be summed as disjoint entry counts.
+[Fixture notes](fixtures/README.md) describe ten fictional bulletin entries with
+identical common fields encoded as RSS, Atom and JSON Feed in deliberately
+nonchronological order. All timestamps denote UTC. Example links are identifiers,
+not fetched resources. The worker's native feed directory is grouped by declared
+format to discover those reader paths; directory metadata is not a live URL check.
 
-`max_items := 0` uses a one-million-item ceiling, not infinite history. The worker fetches and parses before slicing; this notebook measures returned-row coverage, not reduced HTTP traffic or latency. Comparisons cover common normalized fields, not lossless format conversion or strict standards validation. COPY/write functions are outside this read-only investigation.
+The first notebook fixes the interval to **[13 January 2026, 12:00; 15 January
+2026, 12:00) UTC**. Unknown dates, older entries and entries at/after the anchor
+remain separate. Overlapping topic labels cannot be summed as disjoint populations.
+An exact nine-request audit verifies one metadata, full and capped fetch per
+format; inline RSS parsing makes no additional HTTP request.
 
-## Validation
+`max_items := 0` uses a one-million-item safety ceiling, not unbounded history.
+The worker fetches and parses before slicing. This example measures returned-row
+coverage, not reduced network traffic or measured latency. Sorting an already
+capped result cannot recover omitted items.
 
-Verified through published Haybarn on macOS arm64:
+The second notebook exercises all four released COPY handlers. `feed.auto`
+imports a local file; `feed.rss`, `feed.atom` and `feed.jsonfeed` export rows ordered
+by an explicit SQL column. Output files are confined to `artifacts/roundtrip` and
+replaced on rerun. Paths are on the worker host; the attached release is a local
+subprocess here. Nothing is published to an external feed.
 
-- Defaults and cap-eight experiment execute from a copied notebooks-only directory in 1.8 s each. Each has 16 code cells, seven visible SQL cells, two charts, ten SQL invariants and the exact nine-request HTTP audit. All four charts were visually inspected.
-- Cap 4→8 raises recent recall 2/6→5/6 (33.3%→83.3%), leaving four→one recent entries omitted. At cap eight, data / operations / release recall is 100% / 66.7% / 83.3%; all document counts, dates and uncapped results stay fixed.
-- All three runner guards preserve the successful default. Structural review, Ruff check/format and unchanged official branding pass.
-- Required source gates pass: 48 Go tests, 131 SQL assertions in four cases, go vet, golangci-lint (zero issues) and gofmt. Metadata scores 100 L2 with zero findings at fail-on-info; execution enabled, external-link and paid AI passes disabled.
+The round-trip contract checks ten unique absolute URN IDs, titles, links,
+publication instants and category sets. A full join catches unexpected as well as
+missing IDs. Re-imported `seq` is a document position, not stable identity. Atom
+fills absent update times from the known publication times in this fixture;
+those values are not observations of later publisher edits. RSS and JSON retain
+the absent update field. These checks establish neither byte equality nor lossless
+preservation of all format-specific fields or strict feed-standard validation.
 
-Both root Go manifest and lock are unchanged. Generated logs and extracted charts are under ignored `artifacts/`. The released tag resolves to `ee87ffa05e70fd1a91a36429aed7ca904375163d`.
+## Run the experiments separately
+
+Double the retrieval cap while leaving the documents and time window fixed:
+
+```sh
+uv run --locked vgi-notebooks 01_measure_feed_prefix_coverage.ipynb \
+  --parameters '{"MAX_ITEMS":8}' --output-dir artifacts/cap-eight
+```
+
+Recent recall rises from 2/6 to 5/6, while full-feed metadata and normalized
+common fields stay fixed. The accepted range is integer 1–10. Restore `4`.
+
+Export newest publication first without changing the population:
+
+```sh
+uv run --locked vgi-notebooks 02_export_order_is_not_identity.ipynb \
+  --parameters '{"EXPORT_ORDER":"published_desc"}' --output-dir artifacts/newest-first
+```
+
+IDs, common fields and timestamp-fallback counts stay fixed; source positions
+change. The accepted values are `"source"` and `"published_desc"`. Restore
+`"source"` for the default.
+
+The shared runner requires separate output directories for parameter overrides
+and writes a notebook only after success. Defaults, both experiments, all changed
+charts and one fresh preloaded-kernel bootstrap are checked. Hosted Colab was not
+manually operated. Review PNGs, generated feed files and experiment copies are
+ignored; native SVG outputs and GitHub SVG assets are committed.
+
+[Coverage evidence](coverage.json) retains all seven logical SQL surfaces,
+including the view and all COPY handlers. Actual release execution is separate
+from current-source compatibility. Current changes add examples/metadata; parsing,
+transport, encoders, signatures and root dependencies are unchanged. Existing green
+source CI is reused for these notebook-only updates.

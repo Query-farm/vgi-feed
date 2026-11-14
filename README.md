@@ -301,4 +301,4 @@ Copyright 2026 Query Farm LLC - https://query.farm
 
 ## Executed notebooks
 
-See the [feed coverage walkthrough](notebooks/README.md) for a portable, executed SQL investigation of source-order caps and recent-entry recall.
+See the [executed feed notebooks](notebooks/README.md) for portable SQL investigations of source-order coverage and COPY round trips across RSS, Atom and JSON Feed.

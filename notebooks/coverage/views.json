@@ -1,0 +1,44 @@
+{
+  "query": "SELECT * FROM duckdb_views() WHERE database_name='feed' ORDER BY schema_name,view_name",
+  "columns": [
+    "database_name",
+    "database_oid",
+    "schema_name",
+    "schema_oid",
+    "view_name",
+    "view_oid",
+    "comment",
+    "tags",
+    "internal",
+    "temporary",
+    "column_count",
+    "sql",
+    "is_bound"
+  ],
+  "rows": [
+    [
+      "feed",
+      22600,
+      "main",
+      22601,
+      "feed_registry",
+      22740,
+      "Curated registry of well-known public RSS / Atom / JSON feeds (name, url, feed_type, category, description) to browse and feed into feed_items / feed_info.",
+      {
+        "domain": "data-integration",
+        "topic": "feed-syndication",
+        "vgi.category": "Feed Sources",
+        "vgi.doc_llm": "A browsable, zero-argument catalog of well-known public feeds. Query it first to discover a real feed URL (across rss, atom, and json formats and topics like Technology, News, Science, Security, and Comics), then pass a chosen url into feed_items(input) or feed_info(input). It is a static list, so it returns instantly with no network access or credentials.",
+        "vgi.doc_md": "## Curated Feed Registry\n\nA browsable, zero-argument view listing well-known public **RSS / Atom / JSON** feeds \u2014 a starting point for discovery when you do not already have a feed URL in hand.\n\n### Columns\n\n- **`name`** \u2014 human-friendly feed name.\n- **`url`** \u2014 the feed URL to hand to `feed_items(input)` or `feed_info(input)`.\n- **`feed_type`** \u2014 the feed format (`rss`, `atom`, or `json`).\n- **`category`** \u2014 a broad topic (Technology, News, Science, Security, Comics).\n- **`description`** \u2014 a one-line summary of the feed.\n\n### Notes\n\nThe registry is a static list, so it returns instantly with no network access. Pick a `url` here, then parse it with the feed table functions.",
+        "vgi.example_queries": "[{\"description\":\"Browse every feed in the registry with its URL, format, and topic.\",\"sql\":\"SELECT name, url, feed_type, category FROM feed.main.feed_registry ORDER BY name\"},{\"description\":\"Find the feed URLs published in JSON Feed format.\",\"sql\":\"SELECT name, url FROM feed.main.feed_registry WHERE feed_type = 'json' ORDER BY name\"}]",
+        "vgi.keywords": "[\"feed registry\",\"feed catalog\",\"feed directory\",\"well-known feeds\",\"public feeds\",\"rss sources\",\"atom sources\",\"json feed\",\"discover feeds\",\"feed urls\",\"example feeds\"]",
+        "vgi.title": "Curated Feed Registry"
+      },
+      false,
+      false,
+      null,
+      "CREATE VIEW feed_registry AS SELECT * FROM (SELECT * FROM (VALUES ('Hacker News Front Page', 'https://hnrss.org/frontpage', 'rss', 'Technology', 'Front-page stories from Hacker News.'), ('NASA Breaking News', 'https://www.nasa.gov/feed/', 'rss', 'Science', 'Breaking news and mission updates from NASA.'), ('BBC News World', 'https://feeds.bbci.co.uk/news/world/rss.xml', 'rss', 'News', 'Top world news headlines from the BBC.'), ('The Verge', 'https://www.theverge.com/rss/index.xml', 'atom', 'Technology', 'Technology, science, and culture reporting from The Verge.'), ('GitHub Blog', 'https://github.blog/feed/', 'rss', 'Technology', 'Product, engineering, and community posts from GitHub.'), ('Daring Fireball', 'https://daringfireball.net/feeds/main', 'atom', 'Technology', 'John Gruber''s commentary on Apple and technology.'), ('xkcd', 'https://xkcd.com/rss.xml', 'rss', 'Comics', 'The xkcd webcomic of romance, sarcasm, math, and language.'), ('Krebs on Security', 'https://krebsonsecurity.com/feed/', 'rss', 'Security', 'In-depth security news and investigation from Brian Krebs.'), ('JSON Feed', 'https://www.jsonfeed.org/feed.json', 'json', 'Technology', 'The reference JSON Feed published by the format''s authors.'), ('Query Farm', 'https://query.farm/index.xml', 'atom', 'Technology', 'Posts and release notes from Query Farm.')) AS valueslist) AS t(\"name\", url, feed_type, category, description);",
+      false
+    ]
+  ]
+}

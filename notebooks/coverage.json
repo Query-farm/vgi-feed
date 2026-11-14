@@ -1,0 +1,319 @@
+{
+  "schema_version": 1,
+  "catalogs": {
+    "released": {
+      "path": "coverage/catalog-release.json",
+      "sha256": "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:46:28.443368+00:00",
+        "catalog_sha256": "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33",
+        "notes": "Complete actual nativev0.5.0 catalog:two readers,four COPY handlers,one view=seven logical names. Native COPY format exports map every option row to its handler,direction and format; writers retain write access."
+      }
+    },
+    "current": {
+      "path": "coverage/catalog-current.json",
+      "sha256": "3e1973a6e348e2ac12358d6d05db8eb4db08e7bc3f04f362989316f8c12fd7ba",
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:46:28.443368+00:00",
+        "catalog_sha256": "3e1973a6e348e2ac12358d6d05db8eb4db08e7bc3f04f362989316f8c12fd7ba",
+        "notes": "Allseven current registrations and schemas reviewed against release; full implementation/dependency diff only adds examples/agent metadata. Current source21c235e6 not separately executed."
+      }
+    }
+  },
+  "notebooks": [
+    {
+      "path": "01_measure_feed_prefix_coverage.ipynb",
+      "sha256": "ca195129cc7e8f2e0c025c3ccb204a39856bd4283ba2091a5c40ac8cdc70368c",
+      "execution": {
+        "path": "coverage/run-01.json",
+        "sha256": "6cb8eb6c4d6509fcc014481d70f3e037029c1673dbffc5988741deeec7674f8c"
+      }
+    },
+    {
+      "path": "02_export_order_is_not_identity.ipynb",
+      "sha256": "5155ce665f0215e94dd902748debe3a94866e578b496f97489bb7572f2b42297",
+      "execution": {
+        "path": "coverage/run-02.json",
+        "sha256": "4fb426ab939d5387a7a34a6b29bb211c2a0812ee0e95ff8824b99dc277897111"
+      }
+    }
+  ],
+  "examples": [
+    {
+      "object": {
+        "schema": "main",
+        "name": "feed_registry"
+      },
+      "notebook": "01_measure_feed_prefix_coverage.ipynb",
+      "sql": [
+        {
+          "cell": "registry",
+          "reference": "feed.main.feed_registry"
+        }
+      ],
+      "narrative_cells": [
+        "registry-story"
+      ],
+      "result_cells": [
+        "registry"
+      ],
+      "interpretation_cells": [
+        "registry-story"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:46:28.443368+00:00",
+        "notebook_sha256": "ca195129cc7e8f2e0c025c3ccb204a39856bd4283ba2091a5c40ac8cdc70368c",
+        "catalog_sha256": [
+          "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33",
+          "3e1973a6e348e2ac12358d6d05db8eb4db08e7bc3f04f362989316f8c12fd7ba"
+        ],
+        "purpose": "Discover the three format families from the native publisher directory before controlled reader comparisons.",
+        "finding": "RSS,Atom andJSON directory groups choose the three parser paths. No external registry URLs are fetched or certified available; identical authored common fields isolate source-order effects."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "feed_info"
+      },
+      "notebook": "01_measure_feed_prefix_coverage.ipynb",
+      "sql": [
+        {
+          "cell": "read-fixtures",
+          "reference": "feed.feed_info"
+        }
+      ],
+      "narrative_cells": [
+        "6d7f40f1",
+        "29ecdcb3"
+      ],
+      "result_cells": [
+        "be45bbd8",
+        "30c147d0"
+      ],
+      "interpretation_cells": [
+        "be45bbd8",
+        "a3fe57a5"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:46:28.443368+00:00",
+        "notebook_sha256": "ca195129cc7e8f2e0c025c3ccb204a39856bd4283ba2091a5c40ac8cdc70368c",
+        "catalog_sha256": [
+          "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33",
+          "3e1973a6e348e2ac12358d6d05db8eb4db08e7bc3f04f362989316f8c12fd7ba"
+        ],
+        "purpose": "Measure whole-document counts and detected formats independently of a capped item result.",
+        "finding": "Each authored document has ten entries,six in the fixed recent window. Metadata agrees with uncapped rows and formatlabels. HTTP audit proves one metadata request per format; counts do not shrink with the cap."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "feed_items"
+      },
+      "notebook": "01_measure_feed_prefix_coverage.ipynb",
+      "sql": [
+        {
+          "cell": "read-fixtures",
+          "reference": "feed.feed_items"
+        }
+      ],
+      "narrative_cells": [
+        "5e3f01da",
+        "8623f1c4",
+        "ea8fb723"
+      ],
+      "result_cells": [
+        "a3fe57a5",
+        "4dc23209",
+        "256f71bc",
+        "30c147d0"
+      ],
+      "interpretation_cells": [
+        "a3fe57a5",
+        "66be5409",
+        "bdec93d1"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:46:28.443368+00:00",
+        "notebook_sha256": "ca195129cc7e8f2e0c025c3ccb204a39856bd4283ba2091a5c40ac8cdc70368c",
+        "catalog_sha256": [
+          "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33",
+          "3e1973a6e348e2ac12358d6d05db8eb4db08e7bc3f04f362989316f8c12fd7ba"
+        ],
+        "purpose": "Compare full and source-capped rows across three formats and inline versus actual HTTP transport.",
+        "finding": "GUID/common-field and transport comparisons pass,source-prefix membership is exact and time classes partition allrows. Cap4retains2/6recent entries; cap8retains5/6,with topic-specific recall and fixed full-input evidence."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "read_feed_copy"
+      },
+      "notebook": "02_export_order_is_not_identity.ipynb",
+      "sql": [
+        {
+          "cell": "import",
+          "reference": "feed.main.read_feed_copy"
+        },
+        {
+          "cell": "readback",
+          "reference": "feed.main.read_feed_copy"
+        }
+      ],
+      "narrative_cells": [
+        "import-story",
+        "readback-story"
+      ],
+      "result_cells": [
+        "input-checks",
+        "roundtrip-result",
+        "updated-result"
+      ],
+      "interpretation_cells": [
+        "input-checks",
+        "roundtrip-result",
+        "updated-result"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:46:28.443368+00:00",
+        "notebook_sha256": "5155ce665f0215e94dd902748debe3a94866e578b496f97489bb7572f2b42297",
+        "catalog_sha256": [
+          "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33",
+          "3e1973a6e348e2ac12358d6d05db8eb4db08e7bc3f04f362989316f8c12fd7ba"
+        ],
+        "purpose": "Import local feed documents into typed item-schema tables and audit all three generated formats.",
+        "finding": "InitialRSS has tenuniqueIDs/knownpublicationtimes/no update times. Reimports retain alltenIDs and common fields performat. Auto-detection and typed mapping are actually executed; later checks expose Atom update defaults and regenerated positions."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "write_rss_copy"
+      },
+      "notebook": "02_export_order_is_not_identity.ipynb",
+      "sql": [
+        {
+          "cell": "rss-export",
+          "reference": "feed.main.write_rss_copy"
+        }
+      ],
+      "narrative_cells": [
+        "order-story",
+        "readback-story",
+        "updated-story"
+      ],
+      "result_cells": [
+        "roundtrip-result",
+        "updated-result"
+      ],
+      "interpretation_cells": [
+        "roundtrip-result",
+        "updated-result",
+        "experiment"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:46:28.443368+00:00",
+        "notebook_sha256": "5155ce665f0215e94dd902748debe3a94866e578b496f97489bb7572f2b42297",
+        "catalog_sha256": [
+          "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33",
+          "3e1973a6e348e2ac12358d6d05db8eb4db08e7bc3f04f362989316f8c12fd7ba"
+        ],
+        "purpose": "Write ordered RSS documents from SQL rows and independently verify the reimported contract.",
+        "finding": "The actual COPY writer produces ten rows,whose stableIDs/commonfields and requested order reconcile after import. Changing export order changes positions without population loss. Atom fills missing updated values from known publication time;RSS/JSON retainNULL,so no all-field lossless claim is made."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "write_atom_copy"
+      },
+      "notebook": "02_export_order_is_not_identity.ipynb",
+      "sql": [
+        {
+          "cell": "atom-export",
+          "reference": "feed.main.write_atom_copy"
+        }
+      ],
+      "narrative_cells": [
+        "order-story",
+        "readback-story",
+        "updated-story"
+      ],
+      "result_cells": [
+        "roundtrip-result",
+        "updated-result"
+      ],
+      "interpretation_cells": [
+        "roundtrip-result",
+        "updated-result",
+        "experiment"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:46:28.443368+00:00",
+        "notebook_sha256": "5155ce665f0215e94dd902748debe3a94866e578b496f97489bb7572f2b42297",
+        "catalog_sha256": [
+          "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33",
+          "3e1973a6e348e2ac12358d6d05db8eb4db08e7bc3f04f362989316f8c12fd7ba"
+        ],
+        "purpose": "Write ordered Atom documents from SQL rows and independently verify the reimported contract.",
+        "finding": "The actual COPY writer produces ten rows,whose stableIDs/commonfields and requested order reconcile after import. Changing export order changes positions without population loss. Atom fills missing updated values from known publication time;RSS/JSON retainNULL,so no all-field lossless claim is made."
+      }
+    },
+    {
+      "object": {
+        "schema": "main",
+        "name": "write_jsonfeed_copy"
+      },
+      "notebook": "02_export_order_is_not_identity.ipynb",
+      "sql": [
+        {
+          "cell": "json-export",
+          "reference": "feed.main.write_jsonfeed_copy"
+        }
+      ],
+      "narrative_cells": [
+        "order-story",
+        "readback-story",
+        "updated-story"
+      ],
+      "result_cells": [
+        "roundtrip-result",
+        "updated-result"
+      ],
+      "interpretation_cells": [
+        "roundtrip-result",
+        "updated-result",
+        "experiment"
+      ],
+      "review": {
+        "status": "approved",
+        "reviewer": "Codex /root",
+        "reviewed_at": "2026-11-14T21:46:28.443368+00:00",
+        "notebook_sha256": "5155ce665f0215e94dd902748debe3a94866e578b496f97489bb7572f2b42297",
+        "catalog_sha256": [
+          "c7a2c3f34fe6221acc217e7c248a9839d34732aa2bff3bd10153f56b658b0b33",
+          "3e1973a6e348e2ac12358d6d05db8eb4db08e7bc3f04f362989316f8c12fd7ba"
+        ],
+        "purpose": "Write ordered JSON Feed documents from SQL rows and independently verify the reimported contract.",
+        "finding": "The actual COPY writer produces ten rows,whose stableIDs/commonfields and requested order reconcile after import. Changing export order changes positions without population loss. Atom fills missing updated values from known publication time;RSS/JSON retainNULL,so no all-field lossless claim is made."
+      }
+    }
+  ]
+}

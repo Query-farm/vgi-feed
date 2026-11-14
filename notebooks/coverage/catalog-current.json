@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "repository": "Query-farm/vgi-feed",
+  "revision": "21c235e6c8fd86cdcf806e7d10863f9b35279093",
+  "captured_at": "2026-11-14T21:32:39.498818+00:00",
+  "default_schema": "main",
+  "scope": "all_public_functions_and_tables",
+  "complete": true,
+  "objects": [
+    {
+      "schema": "main",
+      "name": "feed_info",
+      "kind": "function",
+      "signatures": [
+        "feed_info(VARCHAR, BIGINT) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "feed_items",
+      "kind": "function",
+      "signatures": [
+        "feed_items(VARCHAR, BIGINT, BIGINT) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "read_feed_copy",
+      "kind": "function",
+      "signatures": [
+        "read_feed_copy(BIGINT, BIGINT) -> None"
+      ],
+      "authentication": "none",
+      "access": "read"
+    },
+    {
+      "schema": "main",
+      "name": "write_atom_copy",
+      "kind": "function",
+      "signatures": [
+        "write_atom_copy(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "write"
+    },
+    {
+      "schema": "main",
+      "name": "write_jsonfeed_copy",
+      "kind": "function",
+      "signatures": [
+        "write_jsonfeed_copy(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "write"
+    },
+    {
+      "schema": "main",
+      "name": "write_rss_copy",
+      "kind": "function",
+      "signatures": [
+        "write_rss_copy(VARCHAR, VARCHAR, VARCHAR, VARCHAR, VARCHAR) -> None"
+      ],
+      "authentication": "none",
+      "access": "write"
+    },
+    {
+      "schema": "main",
+      "name": "feed_registry",
+      "kind": "table",
+      "signatures": [
+        "VIEW"
+      ],
+      "authentication": "none",
+      "access": "read"
+    }
+  ],
+  "evidence": [
+    {
+      "path": "coverage/current-registrations.json",
+      "sha256": "6853089ab3b9cb1565b5c2dd4b6dd14ff4d9a5baa1d4876000200f987f31c141",
+      "description": "Reviewed exhaustive current registration and source/dependency comparison; no current runtime claim"
+    },
+    {
+      "path": "coverage/release-to-current.diff",
+      "sha256": "beaf177780a81d11d9163a30874be032355a39f42c9c43e440fdb5d35d4e8a62",
+      "description": "Reviewed exhaustive current registration and source/dependency comparison; no current runtime claim"
+    },
+    {
+      "path": "coverage/current-source-review.md",
+      "sha256": "46adb594d80a53ac5585f46a05375557b23661873756e1c35dfa2392d45b840a",
+      "description": "Reviewed exhaustive current registration and source/dependency comparison; no current runtime claim"
+    }
+  ]
+}
