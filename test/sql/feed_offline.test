@@ -13,7 +13,7 @@ statement ok
 LOAD vgi;
 
 statement ok
-ATTACH 'feed' AS feed (TYPE vgi, LOCATION '${VGI_FEED_WORKER}');
+ATTACH 'feed' AS feed (TYPE vgi, LOCATION '{VGI_FEED_WORKER}');
 
 # ---- feed_info detects the format of each inline document ----
 
@@ -81,3 +81,25 @@ JSON One
 statement error
 SELECT * FROM feed.feed_items('<rss><channel><title>broken</title><item><title>oops');
 ----
+
+# ---- composed catalog examples (feed_items x feed_items, feed_info + feed_items) ----
+
+# New entries since an earlier snapshot: anti-join two feed_items calls on link.
+query ITT
+SELECT cur.seq, cur.title, cur.link
+FROM feed.main.feed_items('<rss version="2.0"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>') AS cur
+ANTI JOIN feed.main.feed_items('<rss version="2.0"><channel><title>Query Farm Sample Feed</title><item><title>First Post</title><link>https://query.farm/first</link></item></channel></rss>') AS prev ON cur.link = prev.link
+ORDER BY cur.seq;
+----
+1	Second Post	https://query.farm/second
+
+# Category breakdown against feed_info's reported item_count.
+query TTIR
+SELECT f.title AS feed_title, c.category, count(*) AS entries, round(count(*) / f.item_count, 2) AS share_of_feed
+FROM feed.main.feed_info('<rss version="2.0"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>') AS f
+CROSS JOIN (SELECT UNNEST(categories) AS category FROM feed.main.feed_items('<rss version="2.0"><channel><title>Query Farm Sample Feed</title><link>https://query.farm/</link><description>A small RSS feed used by vgi-feed examples</description><language>en-us</language><item><title>First Post</title><link>https://query.farm/first</link><category>news</category><category>release</category><description>The first sample entry</description></item><item><title>Second Post</title><link>https://query.farm/second</link><category>news</category><description>The second sample entry</description></item></channel></rss>')) AS c
+GROUP BY f.title, f.item_count, c.category
+ORDER BY entries DESC, c.category;
+----
+Query Farm Sample Feed	news	2	1.0
+Query Farm Sample Feed	release	1	0.5

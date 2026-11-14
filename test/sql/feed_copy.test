@@ -113,6 +113,24 @@ SELECT count(*) FROM read_parquet('{VGI_FEED_COPY_DIR}/feed-copy.parquet');
 ----
 2
 
+# Composed: convert an RSS feed straight to Atom by piping feed_items into the
+# feed.atom writer (the README's conversion example), then read it back.
+statement ok
+COPY (SELECT title, link, published, summary FROM feed.feed_items('{VGI_FEED_TEST_URL}/rss') ORDER BY seq)
+TO '{VGI_FEED_COPY_DIR}/feed-converted.atom' (FORMAT 'feed.atom', title 'Converted feed', link 'https://example.com');
+
+statement ok
+CREATE TABLE converted (seq BIGINT, title VARCHAR, published TIMESTAMP);
+
+statement ok
+COPY converted FROM '{VGI_FEED_COPY_DIR}/feed-converted.atom' (FORMAT 'feed.auto');
+
+query ITI
+SELECT seq, title, year(published) FROM converted ORDER BY seq;
+----
+0	First RSS Post	2006
+1	Second RSS Post	2006
+
 # More than 1,000 items and multiple sink batches: no default import cap, no
 # duplication across HTTP continuations, and preserve the requested order.
 statement ok

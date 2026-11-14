@@ -35,6 +35,47 @@ const SampleRSS = "<rss version=\"2.0\"><channel>" +
 	"<description>The second sample entry</description></item>" +
 	"</channel></rss>"
 
+// SamplePreviousRSS is an earlier snapshot of SampleRSS that only carried the
+// first entry. Diffing the current SampleRSS against it is the offline stand-in
+// for "what is new since I last polled this feed". Like SampleRSS it contains
+// NO single quotes.
+const SamplePreviousRSS = "<rss version=\"2.0\"><channel>" +
+	"<title>Query Farm Sample Feed</title>" +
+	"<item><title>First Post</title><link>https://query.farm/first</link></item>" +
+	"</channel></rss>"
+
+// Composed examples: each combines two of the worker's objects in one query.
+// Every SQL is defined once here and referenced from the schema-level list and
+// the driving function's example list. They are NOT in vgi.executable_examples:
+// that tag is capped at 4,000 characters (VGI417) and the existing three
+// examples plus the inline feed literals already fill it.
+const (
+	// composedNewEntriesSQL anti-joins two feed_items calls: the current feed
+	// against an earlier snapshot, keyed on link. Returns the one new entry
+	// (seq 1, Second Post).
+	composedNewEntriesSQL = "SELECT cur.seq, cur.title, cur.link " +
+		"FROM feed.main.feed_items('" + SampleRSS + "') AS cur " +
+		"ANTI JOIN feed.main.feed_items('" + SamplePreviousRSS + "') AS prev ON cur.link = prev.link " +
+		"ORDER BY cur.seq"
+	composedNewEntriesDesc = "Find the entries that are new since an earlier snapshot of the same feed " +
+		"by anti-joining the current feed_items against the snapshot's feed_items on link " +
+		"(returns Second Post; no network access)."
+
+	// composedCategoryShareSQL joins feed_info (feed title + reported
+	// item_count) to the UNNESTed categories of feed_items, giving each
+	// category's entry count and its share of the feed's items. For SampleRSS:
+	// news 2 entries (1.0), release 1 entry (0.5).
+	composedCategoryShareSQL = "SELECT f.title AS feed_title, c.category, count(*) AS entries, " +
+		"round(count(*) / f.item_count, 2) AS share_of_feed " +
+		"FROM feed.main.feed_info('" + SampleRSS + "') AS f " +
+		"CROSS JOIN (SELECT UNNEST(categories) AS category FROM feed.main.feed_items('" + SampleRSS + "')) AS c " +
+		"GROUP BY f.title, f.item_count, c.category " +
+		"ORDER BY entries DESC, c.category"
+	composedCategoryShareDesc = "Break a feed's entries down by category: join feed_info (feed title and " +
+		"reported item_count) to the UNNESTed categories from feed_items to get each category's entry " +
+		"count and its share of the feed (news 2 entries = 1.0, release 1 = 0.5; no network access)."
+)
+
 // resultColumn is one entry of a vgi.result_columns_schema (VGI321): a returned
 // column's name, its DuckDB type, and a non-blank description.
 type resultColumn struct {
@@ -128,7 +169,24 @@ var SchemaExampleQueries = exampleQueriesJSON(
 		"Read feed-level metadata: title, detected format, language, and item count.",
 		"SELECT title, feed_type, language, item_count FROM feed.main.feed_info('" + SampleRSS + "');",
 	},
+	[2]string{composedNewEntriesDesc, composedNewEntriesSQL},
+	[2]string{composedCategoryShareDesc, composedCategoryShareSQL},
 )
+
+// SampleMirrorJSON is a JSON Feed mirror of the same blog as SampleRSS that
+// carries Second Post plus a Third Post the RSS feed lacks. It backs the
+// composed links_in_both_feeds agent task (answer: https://query.farm/second).
+const SampleMirrorJSON = `{"version":"https://jsonfeed.org/version/1.1","title":"Query Farm JSON Mirror",` +
+	`"items":[{"id":"https://query.farm/second","url":"https://query.farm/second","title":"Second Post"},` +
+	`{"id":"https://query.farm/third","url":"https://query.farm/third","title":"Third Post"}]}`
+
+// SampleNotesAtom is a three-entry Atom feed in which only one entry has a
+// category. It backs the composed uncategorized_entries agent task (answer:
+// Farm Notes, 2).
+const SampleNotesAtom = `<feed xmlns="http://www.w3.org/2005/Atom"><title>Farm Notes</title><id>urn:farm-notes</id>` +
+	`<entry><title>Soil</title><id>urn:n1</id><category term="garden"/></entry>` +
+	`<entry><title>Rain</title><id>urn:n2</id></entry>` +
+	`<entry><title>Frost</title><id>urn:n3</id></entry></feed>`
 
 // AgentTestTasks is the VGI152/VGI920 analyst-task suite (catalog tag
 // vgi.agent_test_tasks). Each task is a natural-language prompt an agent should
@@ -145,10 +203,11 @@ func buildAgentTestTasks() string {
 		Name   string `json:"name"`
 		Prompt string `json:"prompt"`
 	}
-	// Every task is a single-tool, single-shape read (direct column projection
-	// or a simple equality filter) — deliberately NO aggregation or UNNEST,
-	// which reshape the result set and make the analyst/judge comparison flaky.
-	// The two feed functions are both exercised, so object coverage stays 2/2.
+	// The single-object tasks are single-shape reads (direct column projection
+	// or a simple equality filter). The two composed tasks at the end combine
+	// objects (feed_items x feed_items across formats; feed_info + feed_items)
+	// and reshape the result, so their prompts pin the exact output columns to
+	// keep the exact-compare grader stable.
 	tasks := []task{
 		{
 			Name: "list_item_titles",
@@ -184,6 +243,20 @@ func buildAgentTestTasks() string {
 			Prompt: "This worker ships a built-in registry of well-known public feeds. " +
 				"Using that registry, list the name of every feed that is published in " +
 				"the JSON Feed (json) format.",
+		},
+		{
+			Name: "links_in_both_feeds",
+			Prompt: "A blog publishes the RSS feed and the JSON Feed below. Which entry " +
+				"link URLs appear in BOTH feeds? Return a single column named link, one " +
+				"row per URL, sorted ascending. RSS feed: " + SampleRSS +
+				" JSON Feed: " + SampleMirrorJSON,
+		},
+		{
+			Name: "uncategorized_entries",
+			Prompt: "For the Atom feed below, report the feed's title and how many of its " +
+				"entries have no category at all. Return exactly one row with two columns: " +
+				"feed_title (text) and uncategorized_entries (integer). Atom feed: " +
+				SampleNotesAtom,
 		},
 	}
 	b, err := json.Marshal(tasks)
@@ -351,6 +424,10 @@ var itemsExamples = []vgi.CatalogExample{
 		Description: "Expand each item's categories into one row per (item, category), capped at 20 items.",
 	},
 	{
+		SQL:         composedNewEntriesSQL,
+		Description: composedNewEntriesDesc,
+	},
+	{
 		SQL:         "SELECT title, link, published FROM feed.main.feed_items('https://hnrss.org/frontpage', timeout_ms := 5000, max_items := 25) ORDER BY seq;",
 		Description: "Fetch a public RSS URL over HTTP and return its first 25 entries in feed order (requires network access).",
 	},
@@ -468,6 +545,10 @@ var infoExamples = []vgi.CatalogExample{
 	{
 		SQL:         "SELECT feed_type, item_count FROM feed.main.feed_info('<rss version=\"2.0\"><channel><title>Example</title><item><title>Hi</title></item></channel></rss>');",
 		Description: "Parse feed-level metadata directly from a raw inline RSS document (no network access).",
+	},
+	{
+		SQL:         composedCategoryShareSQL,
+		Description: composedCategoryShareDesc,
 	},
 	{
 		SQL:         "SELECT title, feed_type, item_count FROM feed.main.feed_info('https://www.nasa.gov/feed/', timeout_ms := 5000);",

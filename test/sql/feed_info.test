@@ -10,12 +10,12 @@ statement ok
 LOAD vgi;
 
 statement ok
-ATTACH 'feed' AS feed (TYPE vgi, LOCATION '${VGI_FEED_WORKER}');
+ATTACH 'feed' AS feed (TYPE vgi, LOCATION '{VGI_FEED_WORKER}');
 
 # ---- feed_info returns exactly one row of metadata ----
 
 query I
-SELECT count(*) FROM feed.feed_info('${VGI_FEED_TEST_URL}/rss');
+SELECT count(*) FROM feed.feed_info('{VGI_FEED_TEST_URL}/rss');
 ----
 1
 
@@ -23,19 +23,19 @@ SELECT count(*) FROM feed.feed_info('${VGI_FEED_TEST_URL}/rss');
 
 query TI
 SELECT feed_type, item_count
-FROM feed.feed_info('${VGI_FEED_TEST_URL}/rss');
+FROM feed.feed_info('{VGI_FEED_TEST_URL}/rss');
 ----
 rss	2
 
 query TI
 SELECT feed_type, item_count
-FROM feed.feed_info('${VGI_FEED_TEST_URL}/atom');
+FROM feed.feed_info('{VGI_FEED_TEST_URL}/atom');
 ----
 atom	2
 
 query TI
 SELECT feed_type, item_count
-FROM feed.feed_info('${VGI_FEED_TEST_URL}/json');
+FROM feed.feed_info('{VGI_FEED_TEST_URL}/json');
 ----
 json	2
 
@@ -43,7 +43,7 @@ json	2
 
 query TT
 SELECT title, language
-FROM feed.feed_info('${VGI_FEED_TEST_URL}/rss');
+FROM feed.feed_info('{VGI_FEED_TEST_URL}/rss');
 ----
 VGI Mock RSS	en-us
 
@@ -58,5 +58,5 @@ json
 # ---- malformed feed → clean error ----
 
 statement error
-SELECT * FROM feed.feed_info('${VGI_FEED_TEST_URL}/malformed');
+SELECT * FROM feed.feed_info('{VGI_FEED_TEST_URL}/malformed');
 ----

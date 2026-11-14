@@ -223,6 +223,13 @@ COPY (SELECT title, link, published, content FROM items ORDER BY published DESC)
 TO '/absolute/path/headlines.json'
   (FORMAT 'feed.jsonfeed', title 'Headlines', link 'https://example.com');
 
+-- Convert a feed between formats: pipe feed_items straight into a writer.
+COPY (
+  SELECT title, link, published, summary
+  FROM feed.feed_items('https://hnrss.org/frontpage') ORDER BY seq
+) TO '/absolute/path/frontpage.atom'
+  (FORMAT 'feed.atom', title 'Hacker News Front Page', link 'https://news.ycombinator.com/');
+
 -- Inspect available COPY formats and their options.
 SELECT format_name, direction, option_name, option_description
 FROM vgi_copy_formats() WHERE catalog_name = 'feed';
