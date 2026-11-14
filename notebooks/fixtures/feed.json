@@ -1,0 +1,113 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Synthetic engineering bulletin",
+  "home_page_url": "https://example.invalid/",
+  "items": [
+    {
+      "id": "urn:bulletin:01",
+      "title": "Queue latency fixed",
+      "url": "https://example.invalid/bulletins/01",
+      "date_published": "2026-01-15T11:00:00Z",
+      "tags": [
+        "operations",
+        "release"
+      ],
+      "content_text": "Queue latency fixed"
+    },
+    {
+      "id": "urn:bulletin:02",
+      "title": "Older maintenance notice",
+      "url": "https://example.invalid/bulletins/02",
+      "date_published": "2026-01-12T04:00:00Z",
+      "tags": [
+        "operations"
+      ],
+      "content_text": "Older maintenance notice"
+    },
+    {
+      "id": "urn:bulletin:03",
+      "title": "Dataset index released",
+      "url": "https://example.invalid/bulletins/03",
+      "date_published": "2026-01-15T00:00:00Z",
+      "tags": [
+        "data",
+        "release"
+      ],
+      "content_text": "Dataset index released"
+    },
+    {
+      "id": "urn:bulletin:04",
+      "title": "Clock boundary bulletin",
+      "url": "https://example.invalid/bulletins/04",
+      "date_published": "2026-01-15T12:00:00Z",
+      "tags": [
+        "operations"
+      ],
+      "content_text": "Clock boundary bulletin"
+    },
+    {
+      "id": "urn:bulletin:05",
+      "title": "Schema guide revised",
+      "url": "https://example.invalid/bulletins/05",
+      "date_published": "2026-01-14T12:00:00Z",
+      "tags": [
+        "data",
+        "release"
+      ],
+      "content_text": "Schema guide revised"
+    },
+    {
+      "id": "urn:bulletin:06",
+      "title": "Older data backfill",
+      "url": "https://example.invalid/bulletins/06",
+      "date_published": "2026-01-13T00:00:00Z",
+      "tags": [
+        "data"
+      ],
+      "content_text": "Older data backfill"
+    },
+    {
+      "id": "urn:bulletin:07",
+      "title": "Gateway patch available",
+      "url": "https://example.invalid/bulletins/07",
+      "date_published": "2026-01-14T00:00:00Z",
+      "tags": [
+        "operations",
+        "release"
+      ],
+      "content_text": "Gateway patch available"
+    },
+    {
+      "id": "urn:bulletin:08",
+      "title": "Export notes clarified",
+      "url": "https://example.invalid/bulletins/08",
+      "date_published": "2026-01-15T10:00:00Z",
+      "tags": [
+        "data",
+        "release"
+      ],
+      "content_text": "Export notes clarified"
+    },
+    {
+      "id": "urn:bulletin:09",
+      "title": "Future-dated preview",
+      "url": "https://example.invalid/bulletins/09",
+      "date_published": "2026-01-15T16:00:00Z",
+      "tags": [
+        "data"
+      ],
+      "content_text": "Future-dated preview"
+    },
+    {
+      "id": "urn:bulletin:10",
+      "title": "Client patch documented",
+      "url": "https://example.invalid/bulletins/10",
+      "date_published": "2026-01-13T13:00:00Z",
+      "tags": [
+        "operations",
+        "release"
+      ],
+      "content_text": "Client patch documented"
+    }
+  ]
+}

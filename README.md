@@ -298,3 +298,7 @@ Written by [Query.Farm](https://query.farm).
 
 Copyright 2026 Query Farm LLC - https://query.farm
 
+
+## Executed notebooks
+
+See the [feed coverage walkthrough](notebooks/README.md) for a portable, executed SQL investigation of source-order caps and recent-entry recall.
