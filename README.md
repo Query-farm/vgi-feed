@@ -268,14 +268,11 @@ make test-sql     # haybarn SQL end-to-end against a local mock feed server
 make test         # both
 ```
 
-`make test-sql` needs Haybarn 2.0's `haybarn-unittest` on `PATH` (the worker
-speaks VGI protocol `vgi.v3` / 3.3, which only a compatible Haybarn 2.0 `vgi` extension
-accepts):
-
-```sh
-uv tool install --prerelease allow 'haybarn-unittest>=2.0.0rc11,<2.1'
-export PATH="$HOME/.local/bin:$PATH"
-```
+`make test-sql` installs the pinned `haybarn-unittest` SQL runner into `.tools`
+(needs [uv](https://docs.astral.sh/uv/)) and runs `test/sql` over every DuckDB
+transport — stdio, launch (a DuckDB-managed AF_UNIX socket) and http — through
+[`ci/run-integration.sh`](ci/run-integration.sh); `make test-sql TRANSPORTS=http`
+runs one.
 
 ## Licensing
 

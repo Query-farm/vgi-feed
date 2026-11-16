@@ -136,20 +136,22 @@ NULL) and `buildStringListArray` (nil slice → empty list). Then
 
 ## Mock-feed E2E (how `make test-sql` works)
 
-Mirrors `vgi-scim`'s start/stop pattern:
+`make test-sql` runs `ci/run-integration.sh` (adapted from the vgi-starter)
+once per transport — stdio, launch, http — exactly as CI's matrix does:
 
-1. `make build` compiles `vgi-feed-worker` **and** `mockserver`.
-2. `mockserver --addr 127.0.0.1:0` binds a free port and prints `PORT:<n>`; the
-   Makefile captures it. It serves the same in-memory fixtures as the unit tests
+1. `make build` compiles `vgi-feed-worker`; `make tools` installs the pinned
+   `haybarn-unittest` into `.tools`.
+2. The script builds `cmd/mockserver` and starts it on a free port (it prints
+   `PORT:<n>`). It serves the same in-memory fixtures as the unit tests
    via `internal/mockfeed.NewHandler`: a known RSS 2.0 feed at `/rss`, an Atom
    feed at `/atom`, a JSON Feed at `/json`, and a `/malformed` endpoint.
-3. The Makefile exports `VGI_FEED_WORKER` (the worker binary, used as the ATTACH
-   `LOCATION`) and `VGI_FEED_TEST_URL` (`http://127.0.0.1:<n>`, the base URL; the
-   `.test` files append `/rss`, `/atom`, `/json`, `/malformed`), both read by the
-   `.test` files.
-4. `haybarn-unittest --keep-home --test-dir . "test/sql/*"` runs the suite
-   (2.0 isolates `$HOME`; `--keep-home` lets it see the installed `vgi`); the haybarn exit
-   status is captured and returned, and a shell `trap` kills the mock server.
+3. It exports `VGI_FEED_TEST_URL` (`http://127.0.0.1:<n>`, the base URL; the
+   `.test` files append `/rss`, `/atom`, `/json`, `/malformed`) and sets
+   `VGI_FEED_WORKER` (the ATTACH `LOCATION`) per transport: the binary path,
+   `launch:<path>`, or `http://127.0.0.1:<port>` of a `--http` worker.
+4. It runs the staged suite with `haybarn-unittest --keep-home` (2.0 isolates
+   `$HOME`; `--keep-home` lets it see the installed `vgi`) and error-skipping
+   disabled, and fails on any skip not listed in `EXPECTED_SKIP_REASONS`.
 
 `cmd/mockserver` and the Go tests share `internal/mockfeed.NewHandler`.
 
@@ -170,8 +172,9 @@ the writer instance. COPY TO accepts worker-local paths only.
 
 `test/sql/feed_copy.test` covers URL imports, file round trips, 5,000 ordered
 items, NULL dates/lists, empty exports, and failures. `VGI_FEED_COPY_DIR` is an
-absolute scratch directory shared by the worker and test runner; the Makefile
-and CI script create it so HTTP/unix tests do not depend on working directories.
+absolute scratch directory shared by the worker and test runner;
+`ci/run-integration.sh` creates it so http/launch runs do not depend on working
+directories.
 The SDK now speaks protocol 3.3.0; use a matching Haybarn 2.0 VGI client.
 
 ## Test inventory
